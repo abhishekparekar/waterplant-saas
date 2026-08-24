@@ -19,8 +19,11 @@ import {
   AuditLog,
   DeliveryStatus,
   PaymentMethod,
-  SubscriptionPlan
+  SubscriptionPlan,
+  SubscriptionDuration,
+  SubscriptionRecord
 } from '../types';
+import { FirestoreTenantService } from '../services/firebase';
 import { 
   initialTenants, 
   initialUsers, 
@@ -138,8 +141,15 @@ interface AppContextType {
   isTodayClosed: boolean;
 
   // Notifications & Subscription
+  subscriptionHistory: SubscriptionRecord[];
   markNotificationRead: (id: string) => void;
   upgradePlan: (plan: SubscriptionPlan) => void;
+  renewSubscription: (
+    plan: SubscriptionPlan, 
+    duration: SubscriptionDuration, 
+    paymentMethod: PaymentMethod,
+    paymentReference?: string
+  ) => { success: boolean; record: SubscriptionRecord };
 
   // Summary Metrics
   metrics: {
@@ -253,6 +263,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return saved ? JSON.parse(saved) : initialAuditLogs;
   });
 
+  const [subscriptionHistory, setSubscriptionHistory] = useState<SubscriptionRecord[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_subscriptions`);
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 'sub_rec_initial_001',
+        tenantId: 'tenant_apw_001',
+        plan: 'Growth',
+        durationMonths: 6,
+        amountPaid: 17844,
+        discountApplied: 3150,
+        startDate: '2026-06-01',
+        expiryDate: '2026-12-01',
+        paymentMethod: 'UPI',
+        paymentReference: 'UPI-RAZORPAY-892019',
+        invoiceNumber: 'INV-SUB-2026-0042',
+        status: 'Active',
+        createdAt: '2026-06-01T10:00:00Z'
+      }
+    ];
+  });
+
   // Local storage synchronization
   useEffect(() => {
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_tenants`, JSON.stringify(tenants));
@@ -271,10 +303,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_dailyClosings`, JSON.stringify(dailyClosings));
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_notifications`, JSON.stringify(notifications));
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_auditLogs`, JSON.stringify(auditLogs));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_subscriptions`, JSON.stringify(subscriptionHistory));
   }, [
     tenants, users, products, customers, orders, recurringSchedules,
     deliveries, bottleLedger, stockLedger, productionRecords, payments,
-    invoices, expenses, dailyClosings, notifications, auditLogs
+    invoices, expenses, dailyClosings, notifications, auditLogs, subscriptionHistory
   ]);
 
   const currentTenant = tenants.find(t => t.id === currentTenantId) || tenants[0];
@@ -1006,6 +1039,99 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } : t));
   };
 
+  const renewSubscription = (
+    plan: SubscriptionPlan,
+    duration: SubscriptionDuration,
+    paymentMethod: PaymentMethod,
+    paymentReference?: string
+  ) => {
+    // Base monthly rate
+    const baseRates: Record<SubscriptionPlan, number> = {
+      Starter: 1499,
+      Growth: 3499,
+      Business: 7999,
+      Enterprise: 14999
+    };
+
+    const monthlyRate = baseRates[plan] || 3499;
+    const baseTotal = monthlyRate * duration;
+    
+    // Discount: 1 mo = 0%, 6 mo = 15%, 12 mo = 25%
+    let discountPct = 0;
+    if (duration === 6) discountPct = 0.15;
+    if (duration === 12) discountPct = 0.25;
+
+    const discountApplied = Math.round(baseTotal * discountPct);
+    const amountPaid = baseTotal - discountApplied;
+
+    const now = new Date();
+    const startDate = now.toISOString().split('T')[0];
+    const expDateObj = new Date(now);
+    expDateObj.setMonth(expDateObj.getMonth() + duration);
+    const expiryDate = expDateObj.toISOString().split('T')[0];
+
+    const invoiceNumber = `INV-SUB-${now.getFullYear()}-${String(subscriptionHistory.length + 1).padStart(4, '0')}`;
+    const ref = paymentReference || `PAY-${paymentMethod.toUpperCase()}-${Date.now().toString().slice(-6)}`;
+
+    const newRecord: SubscriptionRecord = {
+      id: `sub_rec_${Date.now()}`,
+      tenantId: currentTenantId,
+      plan,
+      durationMonths: duration,
+      amountPaid,
+      discountApplied,
+      startDate,
+      expiryDate,
+      paymentMethod,
+      paymentReference: ref,
+      invoiceNumber,
+      status: 'Active',
+      createdAt: now.toISOString()
+    };
+
+    setSubscriptionHistory(prev => [newRecord, ...prev]);
+
+    // Update tenant profile
+    setTenants(prev => prev.map(t => t.id === currentTenantId ? {
+      ...t,
+      plan,
+      subscriptionStatus: 'ACTIVE',
+      subscriptionDuration: duration,
+      subscriptionExpiryDate: expiryDate,
+      trialDaysLeft: 0
+    } : t));
+
+    // Also sync with Firestore
+    FirestoreTenantService.updateSubscription(currentTenantId, plan, duration, newRecord);
+
+    // Add Audit Log
+    setAuditLogs(prev => [{
+      id: `audit_${Date.now()}`,
+      tenantId: currentTenantId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      action: 'SUBSCRIPTION_RENEWED',
+      entityType: 'Subscription',
+      entityId: newRecord.id,
+      details: `Renewed ${plan} plan for ${duration} Month(s) - Paid ₹${amountPaid} via ${paymentMethod} (${ref})`,
+      timestamp: now.toISOString()
+    }, ...prev]);
+
+    // Add Notification
+    setNotifications(prev => [{
+      id: `notif_${Date.now()}`,
+      tenantId: currentTenantId,
+      title: '🎉 Subscription Active & Renewed!',
+      message: `Your ${plan} Plan has been activated for ${duration} Month(s) valid until ${expiryDate}.`,
+      type: 'system',
+      targetRole: 'owner',
+      read: false,
+      timestamp: now.toISOString()
+    }, ...prev]);
+
+    return { success: true, record: newRecord };
+  };
+
   // Real-time KPI calculations
   const today = new Date().toISOString().split('T')[0];
   const todayOrders = orders.filter(o => o.tenantId === currentTenantId && o.scheduledDate === today);
@@ -1115,6 +1241,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       markNotificationRead,
       upgradePlan,
+      renewSubscription,
+      subscriptionHistory: subscriptionHistory.filter(s => s.tenantId === currentTenantId),
 
       metrics
     }}>

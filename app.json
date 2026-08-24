@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "WaterPlant SaaS",
+    "slug": "water-plant-saas",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/favicon.ico",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./public/favicon.ico",
+      "resizeMode": "contain",
+      "backgroundColor": "#020617"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.waterplant.saas"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./public/favicon.ico",
+        "backgroundColor": "#020617"
+      },
+      "package": "com.waterplant.saas",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./public/favicon.ico",
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "water-plant-saas-expo-prod"
+      }
+    }
+  }
+}

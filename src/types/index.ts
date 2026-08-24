@@ -64,7 +64,24 @@ export type RecurringFrequency =
   | 'Custom';
 
 export type SubscriptionPlan = 'Starter' | 'Growth' | 'Business' | 'Enterprise';
+export type SubscriptionDuration = 1 | 6 | 12; // 1 Month, 6 Months, 12 Months
 export type SubscriptionStatus = 'TRIAL' | 'ACTIVE' | 'PAYMENT_PENDING' | 'GRACE_PERIOD' | 'EXPIRED' | 'CANCELLED';
+
+export interface SubscriptionRecord {
+  id: string;
+  tenantId: string;
+  plan: SubscriptionPlan;
+  durationMonths: SubscriptionDuration;
+  amountPaid: number;
+  discountApplied: number;
+  startDate: string;
+  expiryDate: string;
+  paymentMethod: PaymentMethod;
+  paymentReference: string;
+  invoiceNumber: string;
+  status: 'Active' | 'Expired' | 'Renewed';
+  createdAt: string;
+}
 
 export interface Tenant {
   id: string;
@@ -84,6 +101,8 @@ export interface Tenant {
   invoicePrefix: string;
   plan: SubscriptionPlan;
   subscriptionStatus: SubscriptionStatus;
+  subscriptionDuration?: SubscriptionDuration;
+  subscriptionExpiryDate?: string;
   trialDaysLeft: number;
   createdAt: string;
 }

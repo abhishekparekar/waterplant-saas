@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Expo / Mobile build artifacts
+.expo/
+.expo-shared/
+web-build/
+
+# Environment files
+.env
+.env*.local
