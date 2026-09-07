@@ -47,6 +47,7 @@ export default function StaffManagementScreen() {
   const [editPhone, setEditPhone] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [editRole, setEditRole] = useState<'driver' | 'helper' | 'manager'>('driver');
   const [editVehicle, setEditVehicle] = useState('');
   const [editRoute, setEditRoute] = useState('');
   const [editSalary, setEditSalary] = useState('');
@@ -57,19 +58,41 @@ export default function StaffManagementScreen() {
   const [pinModalStaff, setPinModalStaff] = useState<StaffMember | null>(null);
   const [generatedPin, setGeneratedPin] = useState('8492');
 
+  // Filter & Search State
+  const [filterTab, setFilterTab] = useState<'all' | 'driver' | 'helper' | 'inactive'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
     fetchStaff();
   }, [fetchStaff]);
 
   const activeCount = staffList.filter(s => s.status === 'active').length;
   const stoppedCount = staffList.filter(s => s.status === 'inactive').length;
+  const driversCount = staffList.filter(s => s.role === 'driver').length;
+  const helpersCount = staffList.filter(s => s.role === 'helper').length;
   const totalTodayDeliveries = staffList.reduce((acc, s) => acc + (s.todayDeliveries || 0), 0);
+
+  const filteredStaffList = staffList.filter((s) => {
+    if (filterTab === 'driver' && s.role !== 'driver') return false;
+    if (filterTab === 'helper' && s.role !== 'helper') return false;
+    if (filterTab === 'inactive' && s.status !== 'inactive') return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const match = (s.name || '').toLowerCase().includes(q) ||
+                    (s.phone || '').includes(q) ||
+                    (s.vehicleNumber || '').toLowerCase().includes(q) ||
+                    (s.assignedRoute || '').toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    return true;
+  });
 
   const handleOpenCreate = () => {
     setName('');
     setPhone('');
     setEmail('');
     setPassword('water123');
+    setRole('driver');
     setVehicleNumber('');
     setAssignedRoute('');
     setSalaryOrCommission('₹14,000 / mo');
@@ -102,7 +125,7 @@ export default function StaffManagementScreen() {
         todayDeliveries: 0,
       });
 
-      Alert.alert('Staff Created', `Logistics helper ${name} added successfully!`);
+      Alert.alert('Staff Created', `Logistics ${role} ${name} added successfully!`);
       setCreateModalVisible(false);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to add staff member.');
@@ -117,6 +140,7 @@ export default function StaffManagementScreen() {
     setEditPhone(staff.phone);
     setEditEmail(staff.email);
     setEditPassword(staff.password || 'water123');
+    setEditRole(staff.role || 'driver');
     setEditVehicle(staff.vehicleNumber || '');
     setEditRoute(staff.assignedRoute || '');
     setEditSalary(staff.salaryOrCommission || '');
@@ -138,6 +162,7 @@ export default function StaffManagementScreen() {
         phone: editPhone.trim(),
         email: editEmail.trim().toLowerCase(),
         password: editPassword.trim(),
+        role: editRole,
         vehicleNumber: editVehicle.trim(),
         assignedRoute: editRoute.trim(),
         salaryOrCommission: editSalary.trim(),
@@ -152,6 +177,7 @@ export default function StaffManagementScreen() {
       setSavingEdit(false);
     }
   };
+
 
   const handleToggleStatus = (staff: StaffMember) => {
     const nextStatus = staff.status === 'active' ? 'inactive' : 'active';
@@ -206,37 +232,44 @@ export default function StaffManagementScreen() {
       {/* 1. TOP STAFF METRICS BAR */}
       <View className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 px-3.5 pt-2.5 pb-3">
         <View className="flex-row gap-2 mb-2.5">
-          <View className="flex-1 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 rounded-2xl p-2.5">
+          <View className="flex-1 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 rounded-xl p-2.5">
             <Text className="text-[10px] font-black text-sky-600 dark:text-sky-400 uppercase tracking-wider">Total Staff</Text>
             <Text className="text-xl font-black text-sky-950 dark:text-sky-100 mt-0.5">{staffList.length}</Text>
             <Text className="text-[10px] text-sky-600 dark:text-sky-400 font-bold mt-0.5">{activeCount} On Duty</Text>
           </View>
 
-          <View className="flex-1 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl p-2.5">
-            <Text className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Active Run</Text>
-            <Text className="text-xl font-black text-emerald-950 dark:text-emerald-100 mt-0.5">{activeCount}</Text>
-            <Text className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Ready for runs</Text>
+          <View className="flex-1 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl p-2.5">
+            <Text className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Drivers</Text>
+            <Text className="text-xl font-black text-emerald-950 dark:text-emerald-100 mt-0.5">{driversCount}</Text>
+            <Text className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Assigned Fleet</Text>
           </View>
 
-          <View className="flex-1 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl p-2.5">
-            <Text className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider">Stopped</Text>
+          <View className="flex-1 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 rounded-xl p-2.5">
+            <Text className="text-[10px] font-black text-teal-600 dark:text-teal-400 uppercase tracking-wider">Helpers</Text>
+            <Text className="text-xl font-black text-teal-950 dark:text-teal-100 mt-0.5">{helpersCount}</Text>
+            <Text className="text-[10px] text-teal-600 dark:text-teal-400 font-bold mt-0.5">Route Helpers</Text>
+          </View>
+
+          <View className="flex-1 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-xl p-2.5">
+            <Text className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider">Paused</Text>
             <Text className="text-xl font-black text-rose-950 dark:text-rose-100 mt-0.5">{stoppedCount}</Text>
-            <Text className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">Access Paused</Text>
+            <Text className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">Inactive</Text>
           </View>
         </View>
 
-        {/* Add Staff Header Action with LinearGradient */}
+        {/* Add Staff Header Action with Rectangular LinearGradient Button */}
         <TouchableOpacity
           onPress={handleOpenCreate}
           style={{
-            height: 44,
-            borderRadius: 14,
+            height: 40,
+            borderRadius: 8,
             overflow: 'hidden',
             elevation: 3,
             shadowColor: '#0284C7',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,
-            shadowRadius: 3
+            shadowRadius: 3,
+            marginBottom: 8,
           }}
           activeOpacity={0.85}
         >
@@ -244,12 +277,78 @@ export default function StaffManagementScreen() {
             colors={['#0284C7', '#0EA5E9']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            className="w-full h-full flex-row justify-center items-center gap-2"
+            style={{ width: '100%', height: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}
           >
-            <Ionicons name="person-add" size={17} color="#FFF" />
-            <Text style={{ fontSize: 13.5, fontWeight: '900', color: '#FFF' }}>+ Add New Delivery Staff / Driver</Text>
+            <Ionicons name="person-add" size={16} color="#FFF" />
+            <Text style={{ fontSize: 13, fontWeight: '900', color: '#FFF', letterSpacing: 0.2 }}>
+              + Add New Delivery Staff / Driver
+            </Text>
           </LinearGradient>
         </TouchableOpacity>
+
+        {/* Search Staff Bar */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#F8FAFC',
+          borderWidth: 1,
+          borderColor: '#E2E8F0',
+          borderRadius: 8,
+          paddingHorizontal: 10,
+          height: 38,
+          marginBottom: 8,
+        }}>
+          <Ionicons name="search" size={16} color="#64748B" style={{ marginRight: 6 }} />
+          <TextInput
+            style={{ flex: 1, fontSize: 12, fontWeight: '700', color: '#0F172A', paddingVertical: 0 }}
+            placeholder="Search staff by name, phone, vehicle, or route..."
+            placeholderTextColor="#94A3B8"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close-circle" size={16} color="#94A3B8" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Filter Tabs Row */}
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          {[
+            { key: 'all', label: `All (${staffList.length})` },
+            { key: 'driver', label: `Drivers (${driversCount})` },
+            { key: 'helper', label: `Helpers (${helpersCount})` },
+            { key: 'inactive', label: `Paused (${stoppedCount})` },
+          ].map((tab) => {
+            const isSelected = filterTab === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                onPress={() => setFilterTab(tab.key as any)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 6,
+                  borderRadius: 7,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: isSelected ? '#0284C7' : '#F1F5F9',
+                  borderWidth: 1,
+                  borderColor: isSelected ? '#0284C7' : '#E2E8F0',
+                }}
+                activeOpacity={0.75}
+              >
+                <Text style={{
+                  fontSize: 10.5,
+                  fontWeight: '900',
+                  color: isSelected ? '#FFFFFF' : '#64748B',
+                }}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* 2. STAFF LISTING */}
@@ -260,11 +359,11 @@ export default function StaffManagementScreen() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchStaff} colors={['#0284c7']} />}
       >
         <Text className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5">
-          Plant Delivery Staff & Logistics ({staffList.length})
+          Plant Delivery Staff & Logistics ({filteredStaffList.length})
         </Text>
 
         <View className="gap-3">
-          {staffList.map((staff) => {
+          {filteredStaffList.map((staff) => {
             const isActive = staff.status === 'active';
 
             return (
@@ -275,7 +374,7 @@ export default function StaffManagementScreen() {
                 {/* Header Row */}
                 <View className="flex-row justify-between items-start mb-2.5">
                   <View className="flex-row items-center flex-1 pr-2">
-                    <View className="w-11 h-11 rounded-2xl bg-teal-50 dark:bg-teal-950/50 border border-teal-200/60 dark:border-teal-800/60 justify-center items-center mr-2.5">
+                    <View className="w-11 h-11 rounded-xl bg-teal-50 dark:bg-teal-950/50 border border-teal-200/60 dark:border-teal-800/60 justify-center items-center mr-2.5">
                       <Ionicons name={staff.role === 'driver' ? "bus" : "person"} size={22} color="#0D9488" />
                     </View>
                     <View className="flex-1">
@@ -299,7 +398,7 @@ export default function StaffManagementScreen() {
                   <TouchableOpacity
                     onPress={() => handleToggleStatus(staff)}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    className={`px-3 py-1.5 rounded-full flex-row items-center gap-1 border ${
+                    className={`px-3 py-1.5 rounded-lg flex-row items-center gap-1 border ${
                       isActive 
                         ? 'bg-emerald-600 border-emerald-600' 
                         : 'bg-rose-600 border-rose-600'
@@ -331,50 +430,120 @@ export default function StaffManagementScreen() {
                     <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Salary / Pay</Text>
                     <Text className="text-xs font-black text-emerald-600">{staff.salaryOrCommission || '₹14,000 / mo'}</Text>
                   </View>
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Today's Drops</Text>
+                    <Text className="text-xs font-black text-sky-600">{staff.todayDeliveries || 0} Jars Completed</Text>
+                  </View>
                 </View>
 
-                {/* Action Buttons */}
-                <View className="flex-row items-center gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-700/50">
-                  {/* WhatsApp Credentials */}
+                {/* Action Buttons in Rectangular Format */}
+                <View className="flex-row items-center gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-700/50">
+                  {/* WhatsApp Credentials with Rectangular LinearGradient */}
                   <TouchableOpacity
                     onPress={() => handleShareCredentialsWhatsApp(staff)}
-                    className="flex-1 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 py-2 rounded-xl flex-row justify-center items-center gap-1.5 active:opacity-75"
+                    style={{
+                      flex: 1,
+                      height: 36,
+                      borderRadius: 7,
+                      overflow: 'hidden',
+                      elevation: 2,
+                      shadowColor: '#10B981',
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 2,
+                    }}
+                    activeOpacity={0.82}
                   >
-                    <Ionicons name="logo-whatsapp" size={14} color="#059669" />
-                    <Text className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">Share Login</Text>
+                    <LinearGradient
+                      colors={['#10B981', '#059669']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ height: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 4 }}
+                    >
+                      <Ionicons name="logo-whatsapp" size={14} color="#FFF" />
+                      <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFF' }}>Share Login</Text>
+                    </LinearGradient>
                   </TouchableOpacity>
 
-                  {/* Auth PIN */}
+                  {/* Auth PIN with Rectangular LinearGradient */}
                   <TouchableOpacity
                     onPress={() => handleGenerateDriverPin(staff)}
-                    className="flex-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 py-2 rounded-xl flex-row justify-center items-center gap-1.5 active:opacity-75"
+                    style={{
+                      flex: 1,
+                      height: 36,
+                      borderRadius: 7,
+                      overflow: 'hidden',
+                      elevation: 2,
+                      shadowColor: '#D97706',
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 2,
+                    }}
+                    activeOpacity={0.82}
                   >
-                    <Ionicons name="key-outline" size={14} color="#D97706" />
-                    <Text className="text-[11px] font-bold text-amber-700 dark:text-amber-300">Auth PIN</Text>
+                    <LinearGradient
+                      colors={['#F59E0B', '#D97706']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ height: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 4 }}
+                    >
+                      <Ionicons name="key-outline" size={14} color="#FFF" />
+                      <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFF' }}>Auth PIN</Text>
+                    </LinearGradient>
                   </TouchableOpacity>
 
                   {/* Edit */}
                   <TouchableOpacity
                     onPress={() => handleOpenEdit(staff)}
-                    className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 justify-center items-center"
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 7,
+                      backgroundColor: '#E0F2FE',
+                      borderWidth: 1,
+                      borderColor: '#BAE6FD',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                    activeOpacity={0.75}
                   >
-                    <Ionicons name="create-outline" size={15} color="#0284c7" />
+                    <Ionicons name="create-outline" size={16} color="#0284C7" />
                   </TouchableOpacity>
 
                   {/* Call */}
                   <TouchableOpacity
                     onPress={() => Linking.openURL(`tel:${staff.phone}`).catch(() => {})}
-                    className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700 justify-center items-center"
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 7,
+                      backgroundColor: '#ECFDF5',
+                      borderWidth: 1,
+                      borderColor: '#A7F3D0',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                    activeOpacity={0.75}
                   >
-                    <Ionicons name="call" size={14} color="#059669" />
+                    <Ionicons name="call" size={15} color="#059669" />
                   </TouchableOpacity>
 
                   {/* Delete */}
                   <TouchableOpacity
                     onPress={() => handleDeleteStaff(staff)}
-                    className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 justify-center items-center"
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 7,
+                      backgroundColor: '#FFE4E6',
+                      borderWidth: 1,
+                      borderColor: '#FECDD3',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                    activeOpacity={0.75}
                   >
-                    <Ionicons name="trash-outline" size={14} color="#E11D48" />
+                    <Ionicons name="trash-outline" size={15} color="#E11D48" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -433,6 +602,44 @@ export default function StaffManagementScreen() {
                 autoCapitalize="none"
               />
 
+              {/* Role Selection */}
+              <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                Staff Role *
+              </Text>
+              <View className="flex-row gap-2 mb-3">
+                {[
+                  { key: 'driver', label: 'Driver', icon: 'bicycle' },
+                  { key: 'helper', label: 'Route Helper', icon: 'person' },
+                  { key: 'manager', label: 'Supervisor', icon: 'shield-checkmark' }
+                ].map((r) => {
+                  const isSel = role === r.key;
+                  return (
+                    <TouchableOpacity
+                      key={r.key}
+                      onPress={() => setRole(r.key as any)}
+                      style={{
+                        flex: 1,
+                        height: 38,
+                        borderRadius: 8,
+                        backgroundColor: isSel ? '#0284C7' : '#F1F5F9',
+                        borderWidth: 1,
+                        borderColor: isSel ? '#0284C7' : '#CBD5E1',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 4
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <Ionicons name={r.icon as any} size={14} color={isSel ? '#FFF' : '#64748B'} />
+                      <Text style={{ fontSize: 11, fontWeight: '900', color: isSel ? '#FFF' : '#475569' }}>
+                        {r.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
               <Input
                 label="Assigned Vehicle (Tempo / Van)"
                 placeholder="e.g. MH-12-AB-4050"
@@ -466,10 +673,19 @@ export default function StaffManagementScreen() {
               <View className="flex-row gap-2 mt-3">
                 <TouchableOpacity
                   onPress={() => setCreateModalVisible(false)}
-                  className="flex-1 h-11 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
+                  style={{
+                    flex: 1,
+                    height: 40,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#F1F5F9',
+                    borderWidth: 1,
+                    borderColor: '#CBD5E1',
+                  }}
                   activeOpacity={0.7}
                 >
-                  <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: '#475569' }}>
                     Cancel
                   </Text>
                 </TouchableOpacity>
@@ -477,21 +693,30 @@ export default function StaffManagementScreen() {
                 <TouchableOpacity
                   onPress={handleCreateStaff}
                   disabled={submitting}
-                  className="flex-1 h-11 rounded-xl overflow-hidden shadow-sm shadow-black/10"
+                  style={{
+                    flex: 1,
+                    height: 40,
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    elevation: 3,
+                    shadowColor: '#0284C7',
+                    shadowOpacity: 0.25,
+                    shadowRadius: 3,
+                  }}
                   activeOpacity={0.85}
                 >
                   <LinearGradient
                     colors={['#0284C7', '#0EA5E9']}
                     start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    className="w-full h-full items-center justify-center flex-row gap-1.5"
+                    end={{ x: 1, y: 0 }}
+                    style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}
                   >
                     {submitting ? (
                       <ActivityIndicator size="small" color="#FFF" />
                     ) : (
                       <>
-                        <Ionicons name="person-add" size={16} color="#FFF" />
-                        <Text className="text-xs font-bold text-white tracking-wide">
+                        <Ionicons name="person-add" size={15} color="#FFF" />
+                        <Text style={{ fontSize: 12, fontWeight: '900', color: '#FFF' }}>
                           Add Staff Member
                         </Text>
                       </>
@@ -550,6 +775,44 @@ export default function StaffManagementScreen() {
                 autoCapitalize="none"
               />
 
+              {/* Edit Role Selection */}
+              <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                Staff Role *
+              </Text>
+              <View className="flex-row gap-2 mb-3">
+                {[
+                  { key: 'driver', label: 'Driver', icon: 'bicycle' },
+                  { key: 'helper', label: 'Route Helper', icon: 'person' },
+                  { key: 'manager', label: 'Supervisor', icon: 'shield-checkmark' }
+                ].map((r) => {
+                  const isSel = editRole === r.key;
+                  return (
+                    <TouchableOpacity
+                      key={r.key}
+                      onPress={() => setEditRole(r.key as any)}
+                      style={{
+                        flex: 1,
+                        height: 38,
+                        borderRadius: 8,
+                        backgroundColor: isSel ? '#0284C7' : '#F1F5F9',
+                        borderWidth: 1,
+                        borderColor: isSel ? '#0284C7' : '#CBD5E1',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 4
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <Ionicons name={r.icon as any} size={14} color={isSel ? '#FFF' : '#64748B'} />
+                      <Text style={{ fontSize: 11, fontWeight: '900', color: isSel ? '#FFF' : '#475569' }}>
+                        {r.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
               <Input
                 label="Assigned Vehicle"
                 value={editVehicle}
@@ -573,22 +836,36 @@ export default function StaffManagementScreen() {
               <View className="flex-row gap-2 mb-4">
                 <TouchableOpacity
                   onPress={() => setEditStatus('active')}
-                  className={`flex-1 py-2.5 rounded-xl items-center border ${
-                    editStatus === 'active' ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700'
-                  }`}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    borderWidth: 1,
+                    backgroundColor: editStatus === 'active' ? '#ECFDF5' : '#F8FAFC',
+                    borderColor: editStatus === 'active' ? '#10B981' : '#CBD5E1',
+                  }}
+                  activeOpacity={0.75}
                 >
-                  <Text className={`text-xs font-black ${editStatus === 'active' ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-400'}`}>
+                  <Text style={{ fontSize: 12, fontWeight: '900', color: editStatus === 'active' ? '#047857' : '#64748B' }}>
                     Active (On Duty)
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => setEditStatus('inactive')}
-                  className={`flex-1 py-2.5 rounded-xl items-center border ${
-                    editStatus === 'inactive' ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-500' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700'
-                  }`}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    borderWidth: 1,
+                    backgroundColor: editStatus === 'inactive' ? '#FFF1F2' : '#F8FAFC',
+                    borderColor: editStatus === 'inactive' ? '#F43F5E' : '#CBD5E1',
+                  }}
+                  activeOpacity={0.75}
                 >
-                  <Text className={`text-xs font-black ${editStatus === 'inactive' ? 'text-rose-700 dark:text-rose-300' : 'text-slate-600 dark:text-slate-400'}`}>
+                  <Text style={{ fontSize: 12, fontWeight: '900', color: editStatus === 'inactive' ? '#BE123C' : '#64748B' }}>
                     Stop / Inactive
                   </Text>
                 </TouchableOpacity>
@@ -597,10 +874,19 @@ export default function StaffManagementScreen() {
               <View className="flex-row gap-2 mt-1">
                 <TouchableOpacity
                   onPress={() => setEditModalVisible(false)}
-                  className="flex-1 h-11 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
+                  style={{
+                    flex: 1,
+                    height: 40,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#F1F5F9',
+                    borderWidth: 1,
+                    borderColor: '#CBD5E1',
+                  }}
                   activeOpacity={0.7}
                 >
-                  <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: '#475569' }}>
                     Cancel
                   </Text>
                 </TouchableOpacity>
@@ -608,21 +894,30 @@ export default function StaffManagementScreen() {
                 <TouchableOpacity
                   onPress={handleSaveEdit}
                   disabled={savingEdit}
-                  className="flex-1 h-11 rounded-xl overflow-hidden shadow-sm shadow-black/10"
+                  style={{
+                    flex: 1,
+                    height: 40,
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    elevation: 3,
+                    shadowColor: '#0284C7',
+                    shadowOpacity: 0.25,
+                    shadowRadius: 3,
+                  }}
                   activeOpacity={0.85}
                 >
                   <LinearGradient
                     colors={['#0284C7', '#0EA5E9']}
                     start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    className="w-full h-full items-center justify-center flex-row gap-1.5"
+                    end={{ x: 1, y: 0 }}
+                    style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}
                   >
                     {savingEdit ? (
                       <ActivityIndicator size="small" color="#FFF" />
                     ) : (
                       <>
-                        <Ionicons name="checkmark-circle-outline" size={16} color="#FFF" />
-                        <Text className="text-xs font-bold text-white tracking-wide">
+                        <Ionicons name="checkmark-circle-outline" size={15} color="#FFF" />
+                        <Text style={{ fontSize: 12, fontWeight: '900', color: '#FFF' }}>
                           Save Changes
                         </Text>
                       </>

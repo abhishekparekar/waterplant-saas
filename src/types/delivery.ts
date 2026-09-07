@@ -5,6 +5,9 @@ export interface Delivery {
   orderId: string;
   customerId: string;
   customerName: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  paymentMethod?: string;
   helperId: string;
   helperName: string;
   status: DeliveryStatus;
@@ -17,3 +20,4 @@ export interface Delivery {
   createdAt: string;
   updatedAt: string;
 }
+

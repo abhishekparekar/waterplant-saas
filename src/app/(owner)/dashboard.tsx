@@ -288,21 +288,21 @@ export default function OwnerDashboard() {
         {/* VIEW 1: [ MENU ] — 3-COLUMN GRID OF ALL 18 BUSINESS MODULES */}
         {/* ========================================================================= */}
         {activeTab === 'menu' && (
-          <View className="gap-2">
-            {/* Quick Action Shortcut Strip (Premium LinearGradient Quick Launch Buttons) */}
-            <View style={{ flexDirection: 'row', gap: 7, marginBottom: 10 }}>
+          <View style={{ gap: 4 }}>
+            {/* Quick Action Shortcut Strip (Clean Rectangular LinearGradient Buttons) */}
+            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 2 }}>
               {/* 1. + Delivery */}
               <TouchableOpacity
                 onPress={() => router.push(ROUTES.ORDER.CREATE)}
                 style={{
                   flex: 1,
-                  borderRadius: 12,
+                  borderRadius: 6,
                   overflow: 'hidden',
-                  elevation: 4,
+                  elevation: 3,
                   shadowColor: '#E11D48',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 1.5 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3,
                 }}
                 activeOpacity={0.82}
               >
@@ -311,16 +311,16 @@ export default function OwnerDashboard() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{
-                    height: 42,
+                    height: 38,
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 4.5,
+                    gap: 4,
                     paddingHorizontal: 2,
                   }}
                 >
-                  <Ionicons name="cart" size={15} color="#FFFFFF" />
-                  <Text style={{ fontSize: 11.5, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.2 }}>
+                  <Ionicons name="cart" size={14} color="#FFFFFF" />
+                  <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.1 }}>
                     + Delivery
                   </Text>
                 </LinearGradient>
@@ -331,13 +331,13 @@ export default function OwnerDashboard() {
                 onPress={() => router.push(ROUTES.OWNER.CUSTOMERS)}
                 style={{
                   flex: 1,
-                  borderRadius: 12,
+                  borderRadius: 6,
                   overflow: 'hidden',
-                  elevation: 4,
+                  elevation: 3,
                   shadowColor: '#0284C7',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 1.5 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3,
                 }}
                 activeOpacity={0.82}
               >
@@ -346,16 +346,16 @@ export default function OwnerDashboard() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{
-                    height: 42,
+                    height: 38,
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 4.5,
+                    gap: 4,
                     paddingHorizontal: 2,
                   }}
                 >
-                  <Ionicons name="person-add" size={15} color="#FFFFFF" />
-                  <Text style={{ fontSize: 11.5, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.2 }}>
+                  <Ionicons name="person-add" size={14} color="#FFFFFF" />
+                  <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.1 }}>
                     + Client
                   </Text>
                 </LinearGradient>
@@ -366,13 +366,13 @@ export default function OwnerDashboard() {
                 onPress={() => router.push(ROUTES.OWNER.LOAD_UNLOAD)}
                 style={{
                   flex: 1,
-                  borderRadius: 12,
+                  borderRadius: 6,
                   overflow: 'hidden',
-                  elevation: 4,
+                  elevation: 3,
                   shadowColor: '#EA580C',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 1.5 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3,
                 }}
                 activeOpacity={0.82}
               >
@@ -381,16 +381,16 @@ export default function OwnerDashboard() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{
-                    height: 42,
+                    height: 38,
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 4.5,
+                    gap: 4,
                     paddingHorizontal: 2,
                   }}
                 >
-                  <Ionicons name="bus" size={15} color="#FFFFFF" />
-                  <Text style={{ fontSize: 11.5, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.2 }}>
+                  <Ionicons name="bus" size={14} color="#FFFFFF" />
+                  <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.1 }}>
                     Load Truck
                   </Text>
                 </LinearGradient>
@@ -401,13 +401,13 @@ export default function OwnerDashboard() {
                 onPress={() => router.push(ROUTES.OWNER.EXPENSES)}
                 style={{
                   flex: 1,
-                  borderRadius: 12,
+                  borderRadius: 6,
                   overflow: 'hidden',
-                  elevation: 4,
+                  elevation: 3,
                   shadowColor: '#059669',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 1.5 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3,
                 }}
                 activeOpacity={0.82}
               >
@@ -416,16 +416,16 @@ export default function OwnerDashboard() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{
-                    height: 42,
+                    height: 38,
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 4.5,
+                    gap: 4,
                     paddingHorizontal: 2,
                   }}
                 >
-                  <Ionicons name="cash" size={15} color="#FFFFFF" />
-                  <Text style={{ fontSize: 11.5, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.2 }}>
+                  <Ionicons name="cash" size={14} color="#FFFFFF" />
+                  <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.1 }}>
                     + Expense
                   </Text>
                 </LinearGradient>

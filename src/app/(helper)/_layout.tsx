@@ -42,16 +42,16 @@ export default function HelperLayout() {
     ]);
   };
 
-  // Top App Bar Left (☰ Hamburger + Plant Name)
+  // Top App Bar Left (☰ Hamburger + 38x38 Logo + Full Flex Plant Name)
   const renderHeaderLeft = () => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 14, gap: 10 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 }}>
       <TouchableOpacity 
         onPress={() => setSidebarVisible(true)}
         activeOpacity={0.7}
         style={{
           width: 36,
           height: 36,
-          borderRadius: 10,
+          borderRadius: 8,
           backgroundColor: isDark ? '#132E2E' : '#F0FDFA',
           borderWidth: 1,
           borderColor: isDark ? '#134E4A' : '#CCFBF1',
@@ -62,78 +62,102 @@ export default function HelperLayout() {
         <Ionicons name="menu" size={20} color={isDark ? '#2DD4BF' : '#0D9488'} />
       </TouchableOpacity>
 
-      <Image 
-        source={require('../../../assets/images/logo1_transparent.png')} 
-        style={{ width: 30, height: 30 }} 
-        resizeMode="contain"
-      />
+      <View style={{
+        width: 38,
+        height: 38,
+        borderRadius: 9,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1.5,
+        borderColor: '#0D9488',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+      }}>
+        <Image 
+          source={require('../../../assets/images/logo1_transparent.png')} 
+          style={{ width: 28, height: 28 }} 
+          resizeMode="contain"
+        />
+      </View>
 
-      <View style={{ maxWidth: 160 }}>
-        <Text style={{ fontSize: 15, fontWeight: '900', color: isDark ? '#F8FAFC' : '#0F172A', letterSpacing: 0.1 }} numberOfLines={1}>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <Text 
+          style={{ 
+            fontSize: 15, 
+            fontWeight: '900', 
+            color: isDark ? '#F8FAFC' : '#0F172A', 
+            letterSpacing: 0.1,
+          }} 
+          numberOfLines={1}
+        >
           {user?.businessName || 'Abhiraj Water Plant'}
         </Text>
-        <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#0D9488', letterSpacing: 0.3 }}>
-          Driver Logistics Fleet
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
+          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' }} />
+          <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#0D9488', letterSpacing: 0.3 }} numberOfLines={1}>
+            Logistics Fleet Staff
+          </Text>
+        </View>
       </View>
     </View>
   );
 
   // Top App Bar Right (Notify, QR Scan, Help)
   const renderHeaderRight = () => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 14, gap: 8 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
       <TouchableOpacity 
         onPress={() => Alert.alert('Notifications', 'No pending dispatch alerts.')}
         style={{
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 8,
-          paddingVertical: 5,
-          borderRadius: 10,
+          width: 34,
+          height: 34,
+          borderRadius: 8,
           backgroundColor: isDark ? '#132E2E' : '#F0FDFA',
           borderWidth: 1,
           borderColor: isDark ? '#134E4A' : '#CCFBF1',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
         activeOpacity={0.75}
       >
         <Ionicons name="notifications" size={16} color={isDark ? '#2DD4BF' : '#0D9488'} />
-        <Text style={{ fontSize: 7.5, fontWeight: '900', color: isDark ? '#94A3B8' : '#64748B', marginTop: 1, letterSpacing: 0.2 }}>Notify</Text>
       </TouchableOpacity>
 
       <TouchableOpacity 
         onPress={() => Alert.alert('QR Scanner', 'Scan Customer Jar QR to confirm delivery.')}
         style={{
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 8,
-          paddingVertical: 5,
-          borderRadius: 10,
+          width: 34,
+          height: 34,
+          borderRadius: 8,
           backgroundColor: isDark ? '#132E2E' : '#F0FDFA',
           borderWidth: 1,
           borderColor: isDark ? '#134E4A' : '#CCFBF1',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
         activeOpacity={0.75}
       >
         <Ionicons name="qr-code-outline" size={16} color={isDark ? '#2DD4BF' : '#0D9488'} />
-        <Text style={{ fontSize: 7.5, fontWeight: '900', color: isDark ? '#94A3B8' : '#64748B', marginTop: 1, letterSpacing: 0.2 }}>QR Scan</Text>
       </TouchableOpacity>
 
       <TouchableOpacity 
         onPress={() => Linking.openURL('tel:8485877633').catch(() => {})}
         style={{
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 8,
-          paddingVertical: 5,
-          borderRadius: 10,
+          width: 34,
+          height: 34,
+          borderRadius: 8,
           backgroundColor: isDark ? '#132E2E' : '#F0FDFA',
           borderWidth: 1,
           borderColor: isDark ? '#134E4A' : '#CCFBF1',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
         activeOpacity={0.75}
       >
-        <Ionicons name="help-circle-outline" size={16} color={isDark ? '#2DD4BF' : '#0D9488'} />
-        <Text style={{ fontSize: 7.5, fontWeight: '900', color: isDark ? '#94A3B8' : '#64748B', marginTop: 1, letterSpacing: 0.2 }}>Help</Text>
+        <Ionicons name="help-circle-outline" size={17} color={isDark ? '#2DD4BF' : '#0D9488'} />
       </TouchableOpacity>
     </View>
   );
@@ -200,7 +224,9 @@ export default function HelperLayout() {
             borderBottomWidth: 0,
             elevation: 2,
           },
-          headerTitle: '',
+          headerTitle: () => null,
+          headerLeftContainerStyle: { flex: 1, paddingLeft: 10 },
+          headerRightContainerStyle: { paddingRight: 10 },
           headerLeft: renderHeaderLeft,
           headerRight: renderHeaderRight,
         }}
@@ -226,7 +252,7 @@ export default function HelperLayout() {
         <Tabs.Screen 
           name="deliveries" 
           options={{ 
-            title: 'History',
+            title: 'Drop History',
             tabBarIcon: ({ focused, color }) => (
               <View style={{ alignItems: 'center', justifyContent: 'center', height: 26 }}>
                 <Ionicons 
@@ -246,12 +272,12 @@ export default function HelperLayout() {
             title: '',
             tabBarIcon: () => (
               <View style={{
-                width: 52,
-                height: 52,
-                borderRadius: 26,
+                width: 48,
+                height: 48,
+                borderRadius: 12,
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginTop: -16,
+                marginTop: -14,
                 shadowColor: '#0D9488',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.35,
@@ -263,16 +289,16 @@ export default function HelperLayout() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: 25,
+                    width: 46,
+                    height: 46,
+                    borderRadius: 10,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    borderWidth: 3,
+                    borderWidth: 2.5,
                     borderColor: isDark ? '#0B132B' : '#FFFFFF',
                   }}
                 >
-                  <Ionicons name="add" size={28} color="#FFFFFF" />
+                  <Ionicons name="bicycle" size={24} color="#FFFFFF" />
                 </LinearGradient>
               </View>
             ),
@@ -289,7 +315,7 @@ export default function HelperLayout() {
         <Tabs.Screen 
           name="profile" 
           options={{ 
-            title: 'Staff Profile',
+            title: 'Driver Profile',
             tabBarIcon: ({ focused, color }) => (
               <View style={{ alignItems: 'center', justifyContent: 'center', height: 26 }}>
                 <Ionicons 
@@ -303,49 +329,229 @@ export default function HelperLayout() {
         />
       </Tabs>
 
-      {/* Sidebar Drawer */}
+      {/* Modern Curved Sidebar Drawer */}
       <Modal
         animationType="fade"
         transparent={true}
         visible={sidebarVisible}
         onRequestClose={() => setSidebarVisible(false)}
       >
-        <View style={{ flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.6)' }}>
-          <View style={{ width: '80%', maxWidth: 320, backgroundColor: isDark ? '#0F172A' : '#FFFFFF', height: '100%', padding: 20, paddingTop: insets.top + 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: isDark ? '#334155' : '#E2E8F0' }}>
-              <Image source={require('../../../assets/images/logo1_transparent.png')} style={{ width: 44, height: 44 }} resizeMode="contain" />
-              <View>
-                <Text style={{ fontSize: 16, fontWeight: '900', color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                  {user?.displayName || 'Driver Ramesh'}
-                </Text>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#0D9488' }}>
-                  {user?.businessName || 'Abhiraj Water Plant'}
-                </Text>
+        <View style={{ flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.65)' }}>
+          <View style={{
+            width: '82%',
+            maxWidth: 320,
+            backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
+            height: '100%',
+            borderTopRightRadius: 24,
+            borderBottomRightRadius: 24,
+            overflow: 'hidden',
+            paddingTop: insets.top + 16,
+            paddingBottom: insets.bottom + 16,
+            paddingHorizontal: 16,
+          }}>
+            {/* Sidebar Header with LinearGradient Card */}
+            <LinearGradient
+              colors={['#0D9488', '#0F766E']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                borderRadius: 14,
+                padding: 14,
+                marginBottom: 16,
+                elevation: 3,
+                shadowColor: '#0D9488',
+                shadowOpacity: 0.2,
+                shadowRadius: 6,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: '#FFFFFF',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: '#99F6E4',
+                }}>
+                  <Ionicons name="bicycle" size={24} color="#0D9488" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '900', color: '#FFFFFF' }} numberOfLines={1}>
+                    {user?.displayName || 'Driver Staff'}
+                  </Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#CCFBF1' }} numberOfLines={1}>
+                    {user?.businessName || 'Abhiraj Water Plant'}
+                  </Text>
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                    marginTop: 3,
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    alignSelf: 'flex-start',
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 4,
+                  }}>
+                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#A7F3D0' }} />
+                    <Text style={{ fontSize: 9, fontWeight: '900', color: '#FFFFFF', textTransform: 'uppercase' }}>
+                      On Duty • Logistics
+                    </Text>
+                  </View>
+                </View>
               </View>
-            </View>
+            </LinearGradient>
 
-            <ScrollView style={{ marginTop: 16 }}>
-              <TouchableOpacity onPress={() => { setSidebarVisible(false); router.push(ROUTES.HELPER.DASHBOARD); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
-                <Ionicons name="bicycle" size={20} color="#0D9488" />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#F1F5F9' : '#1E293B' }}>Delivery Runs</Text>
+            {/* Sidebar Navigation Items */}
+            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+              <Text style={{ fontSize: 10.5, fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, paddingHorizontal: 4 }}>
+                Driver Operations
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => { setSidebarVisible(false); router.push(ROUTES.HELPER.DASHBOARD); }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 8,
+                  backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+                  marginBottom: 6,
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={{ width: 32, height: 32, borderRadius: 6, backgroundColor: '#CCFBF1', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="bicycle" size={18} color="#0D9488" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: isDark ? '#F1F5F9' : '#0F172A' }}>Active Delivery Runs</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '600', color: '#64748B' }}>View assigned drop stops</Text>
+                </View>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => { setSidebarVisible(false); router.push(ROUTES.HELPER.DELIVERIES); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
-                <Ionicons name="checkmark-done" size={20} color="#0284C7" />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#F1F5F9' : '#1E293B' }}>Delivery History</Text>
+              <TouchableOpacity
+                onPress={() => { setSidebarVisible(false); router.push(ROUTES.HELPER.DELIVERIES); }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 8,
+                  backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+                  marginBottom: 6,
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={{ width: 32, height: 32, borderRadius: 6, backgroundColor: '#E0F2FE', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="receipt" size={18} color="#0284C7" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: isDark ? '#F1F5F9' : '#0F172A' }}>Delivery History</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '600', color: '#64748B' }}>Completed drops & cash</Text>
+                </View>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => { setSidebarVisible(false); Linking.openURL('tel:8485877633'); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
-                <Ionicons name="call" size={20} color="#10B981" />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#F1F5F9' : '#1E293B' }}>Helpline (8485877633)</Text>
+              <TouchableOpacity
+                onPress={() => { setSidebarVisible(false); router.push(ROUTES.HELPER.PROFILE); }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 8,
+                  backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+                  marginBottom: 6,
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={{ width: 32, height: 32, borderRadius: 6, backgroundColor: '#F3E8FF', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="person" size={18} color="#9333EA" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: isDark ? '#F1F5F9' : '#0F172A' }}>Staff Profile & Shift</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '600', color: '#64748B' }}>Vehicle & driver credentials</Text>
+                </View>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={handleLogout} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, marginTop: 20 }}>
-                <Ionicons name="power" size={20} color="#EF4444" />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: '#EF4444' }}>Log Out</Text>
+              <View style={{ height: 1, backgroundColor: isDark ? '#334155' : '#E2E8F0', marginVertical: 12 }} />
+
+              <Text style={{ fontSize: 10.5, fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, paddingHorizontal: 4 }}>
+                Plant Emergency & Helpline
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => { setSidebarVisible(false); Linking.openURL('tel:8485877633').catch(() => {}); }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 8,
+                  backgroundColor: '#ECFDF5',
+                  borderWidth: 1,
+                  borderColor: '#A7F3D0',
+                  marginBottom: 6,
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="call" size={18} color="#059669" />
+                <Text style={{ fontSize: 12.5, fontWeight: '800', color: '#047857' }}>Call Plant Desk (8485877633)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setSidebarVisible(false);
+                  Linking.openURL(`https://wa.me/918485877633?text=Hi%20Plant%20Manager%2C%20driver%20update`).catch(() => {});
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 8,
+                  backgroundColor: '#F0FDF4',
+                  borderWidth: 1,
+                  borderColor: '#BBF7D0',
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="logo-whatsapp" size={18} color="#16A34A" />
+                <Text style={{ fontSize: 12.5, fontWeight: '800', color: '#15803D' }}>WhatsApp Plant Desk</Text>
               </TouchableOpacity>
             </ScrollView>
+
+            {/* Logout Button in Rectangular Format */}
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={{
+                height: 40,
+                borderRadius: 8,
+                backgroundColor: '#FFF1F2',
+                borderWidth: 1,
+                borderColor: '#FECDD3',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                marginTop: 12,
+              }}
+              activeOpacity={0.75}
+            >
+              <Ionicons name="power" size={16} color="#E11D48" />
+              <Text style={{ fontSize: 12.5, fontWeight: '900', color: '#E11D48' }}>
+                End Shift & Log Out
+              </Text>
+            </TouchableOpacity>
           </View>
+
           <TouchableWithoutFeedback onPress={() => setSidebarVisible(false)}>
             <View style={{ flex: 1 }} />
           </TouchableWithoutFeedback>
@@ -354,3 +560,4 @@ export default function HelperLayout() {
     </>
   );
 }
+
