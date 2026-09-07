@@ -266,11 +266,11 @@ export default function HelperLayout() {
           }} 
         />
 
-        {/* 3. + Add Client */}
+        {/* 3. Add Client */}
         <Tabs.Screen 
           name="add-customer" 
           options={{ 
-            title: '+ Add Client',
+            title: 'Add Client',
             tabBarIcon: ({ focused, color }) => (
               <View style={{ alignItems: 'center', justifyContent: 'center', height: 26 }}>
                 <Ionicons 
@@ -483,7 +483,7 @@ export default function HelperLayout() {
                 >
                   <Ionicons name="person-add" size={13} color="#059669" />
                   <Text style={{ fontSize: 10.5, fontWeight: '900', color: isDark ? '#34D399' : '#047857' }}>
-                    + Add Client
+                    Add Client
                   </Text>
                 </TouchableOpacity>
 
@@ -586,7 +586,7 @@ export default function HelperLayout() {
                   <Ionicons name="person-add" size={17} color="#059669" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '900', color: '#047857' }}>+ Register New Client</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '900', color: '#047857' }}>Register New Client</Text>
                   <Text style={{ fontSize: 10, fontWeight: '600', color: '#059669' }}>Add customer on route</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={14} color="#059669" />

@@ -8,7 +8,6 @@ import {
   Platform, 
   Alert, 
   ActivityIndicator,
-  Linking
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
@@ -22,7 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function HelperAddCustomerScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { addCustomer, customers, fetchCustomers } = useCustomerStore();
+  const { addCustomer, fetchCustomers } = useCustomerStore();
   const { createDelivery } = useDeliveryStore();
 
   const [name, setName] = useState('');
@@ -39,15 +38,15 @@ export default function HelperAddCustomerScreen() {
 
   const handleSaveCustomer = async () => {
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Please enter client/customer name.');
+      Alert.alert('Validation Error', 'Please enter client name.');
       return;
     }
     if (!phone.trim() || phone.trim().length < 10) {
-      Alert.alert('Validation Error', 'Please enter a valid 10-digit mobile number.');
+      Alert.alert('Validation Error', 'Please enter a valid 10-digit number.');
       return;
     }
     if (!address.trim()) {
-      Alert.alert('Validation Error', 'Please enter client delivery address or landmark.');
+      Alert.alert('Validation Error', 'Please enter delivery address.');
       return;
     }
 
@@ -95,14 +94,14 @@ export default function HelperAddCustomerScreen() {
 
       Alert.alert(
         'Client Added Successfully! 🎉',
-        `Client "${name}" is now active in ${user?.businessName || 'Plant'} database and visible to the business owner.`,
+        `Client "${name}" has been registered and is now visible to the business owner.`,
         [
           {
             text: 'View Delivery Runs',
             onPress: () => router.replace(ROUTES.HELPER.DASHBOARD)
           },
           {
-            text: '+ Add Another Client',
+            text: 'Add Another Client',
             onPress: () => {
               setName('');
               setPhone('');
@@ -128,53 +127,31 @@ export default function HelperAddCustomerScreen() {
       className="flex-1 bg-slate-50 dark:bg-slate-900"
     >
       <ScrollView 
-        className="flex-1 px-3.5 pt-2.5" 
-        contentContainerStyle={{ paddingBottom: 95 }}
+        className="flex-1 px-3 pt-2" 
+        contentContainerStyle={{ paddingBottom: 85 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Hero Banner with LinearGradient */}
-        <LinearGradient
-          colors={['#0D9488', '#0F766E']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            borderRadius: 14,
-            padding: 14,
-            elevation: 3,
-            shadowColor: '#0D9488',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 5,
-            marginBottom: 12,
-          }}
-        >
-          <View className="flex-row items-center gap-2.5 mb-1">
-            <View className="w-9 h-9 rounded-xl bg-white/20 items-center justify-center border border-white/30">
-              <Ionicons name="person-add" size={20} color="#FFF" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-base font-black text-white">
-                Register New Water Client
-              </Text>
-              <Text className="text-[11px] font-bold text-teal-100">
-                Instantly synced to plant owner & route accounts
-              </Text>
-            </View>
-          </View>
-          <View className="flex-row items-center gap-1.5 mt-1 bg-black/15 px-2.5 py-1 rounded-md self-start">
-            <View className="w-2 h-2 rounded-full bg-emerald-300" />
-            <Text className="text-[10px] font-black text-white">
-              Driver Route Entry: {user?.displayName || 'Logistics Staff'}
+        {/* Compact Title Row (No Green Banner) */}
+        <View className="flex-row items-center justify-between mb-2 px-0.5">
+          <View>
+            <Text className="text-base font-black text-slate-900 dark:text-slate-100">
+              Add Client
+            </Text>
+            <Text className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              Register new delivery customer on route
             </Text>
           </View>
-        </LinearGradient>
+          <View className="flex-row items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2 py-1 rounded-md">
+            <View className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <Text className="text-[10.5px] font-black text-emerald-700 dark:text-emerald-300">
+              Owner Synced
+            </Text>
+          </View>
+        </View>
 
-        {/* Client Type Selector */}
-        <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 px-0.5">
-          Client Category *
-        </Text>
-        <View className="flex-row gap-2 mb-3">
+        {/* Client Category Chips */}
+        <View className="flex-row gap-2 mb-2.5">
           {[
             { key: 'residential', label: 'Home / Flat', icon: 'home-outline' },
             { key: 'commercial', label: 'Office / Shop', icon: 'business-outline' },
@@ -187,7 +164,7 @@ export default function HelperAddCustomerScreen() {
                 onPress={() => setCustomerType(item.key as any)}
                 style={{
                   flex: 1,
-                  paddingVertical: 8,
+                  paddingVertical: 7,
                   borderRadius: 8,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -199,8 +176,8 @@ export default function HelperAddCustomerScreen() {
                 }}
                 activeOpacity={0.75}
               >
-                <Ionicons name={item.icon as any} size={14} color={isSel ? '#FFF' : '#64748B'} />
-                <Text style={{ fontSize: 11, fontWeight: '900', color: isSel ? '#FFF' : '#475569' }}>
+                <Ionicons name={item.icon as any} size={13} color={isSel ? '#FFF' : '#64748B'} />
+                <Text style={{ fontSize: 11, fontWeight: '800', color: isSel ? '#FFF' : '#475569' }}>
                   {item.label}
                 </Text>
               </TouchableOpacity>
@@ -209,25 +186,25 @@ export default function HelperAddCustomerScreen() {
         </View>
 
         {/* Input Details Card */}
-        <View className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm mb-3">
+        <View className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-800 rounded-xl p-3 shadow-sm mb-2.5">
           <Input
-            label="Client Full Name *"
-            placeholder="e.g. Ramesh Patil / Sai Cafe"
+            label="Client Name *"
+            placeholder="Enter name"
             value={name}
             onChangeText={setName}
           />
 
           <Input
-            label="Client Phone / WhatsApp Number *"
-            placeholder="e.g. 9822001122"
+            label="Phone Number *"
+            placeholder="Enter number"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
           />
 
           <Input
-            label="Delivery Address / Landmark *"
-            placeholder="e.g. Flat 302, Sai Residency, Near Water Tank"
+            label="Delivery Address *"
+            placeholder="Enter address"
             value={address}
             onChangeText={setAddress}
             multiline
@@ -236,17 +213,17 @@ export default function HelperAddCustomerScreen() {
 
           <Input
             label="Route / Sector (Optional)"
-            placeholder="e.g. Sector 4 / Main Market Route"
+            placeholder="Enter route / area"
             value={routeArea}
             onChangeText={setRouteArea}
           />
 
           {/* Pricing & Jar Setup */}
-          <View className="flex-row gap-2.5">
+          <View className="flex-row gap-2">
             <View className="flex-1">
               <Input
-                label="Price Per 20L Jar (₹)"
-                placeholder="35"
+                label="Price Per Jar (₹)"
+                placeholder="Enter price"
                 value={pricePerJar}
                 onChangeText={setPricePerJar}
                 keyboardType="decimal-pad"
@@ -256,7 +233,7 @@ export default function HelperAddCustomerScreen() {
             <View className="flex-1">
               <Input
                 label="Bottle Deposit (₹)"
-                placeholder="150"
+                placeholder="Enter deposit"
                 value={depositCollected}
                 onChangeText={setDepositCollected}
                 keyboardType="decimal-pad"
@@ -265,20 +242,20 @@ export default function HelperAddCustomerScreen() {
           </View>
         </View>
 
-        {/* Initial First Drop Steppers Card */}
-        <View className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm mb-3">
-          <Text className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-2.5">
+        {/* Handover Steppers Card */}
+        <View className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-800 rounded-xl p-3 shadow-sm mb-2.5">
+          <Text className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">
             Initial Water Jars Handover (Today)
           </Text>
 
           {/* Full Jars Delivered Stepper */}
-          <View className="flex-row items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
+          <View className="flex-row items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
             <View>
-              <Text className="text-xs font-black text-slate-800 dark:text-slate-200">
-                Full Jars Delivered Now
+              <Text className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Full Jars Delivered
               </Text>
-              <Text className="text-[10px] font-semibold text-slate-400">
-                Jars left at customer location
+              <Text className="text-[10px] text-slate-400">
+                Left at customer place
               </Text>
             </View>
 
@@ -286,9 +263,9 @@ export default function HelperAddCustomerScreen() {
               <TouchableOpacity
                 onPress={() => setInitialJars(prev => Math.max(0, prev - 1))}
                 style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 7,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 6,
                   backgroundColor: '#F1F5F9',
                   borderWidth: 1,
                   borderColor: '#CBD5E1',
@@ -296,37 +273,37 @@ export default function HelperAddCustomerScreen() {
                   justifyContent: 'center'
                 }}
               >
-                <Ionicons name="remove" size={16} color="#0F172A" />
+                <Ionicons name="remove" size={15} color="#0F172A" />
               </TouchableOpacity>
 
-              <Text style={{ fontSize: 16, fontWeight: '900', color: '#0D9488', minWidth: 26, textAlign: 'center' }}>
+              <Text style={{ fontSize: 15, fontWeight: '900', color: '#0D9488', minWidth: 24, textAlign: 'center' }}>
                 {initialJars}
               </Text>
 
               <TouchableOpacity
                 onPress={() => setInitialJars(prev => prev + 1)}
                 style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 7,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 6,
                   backgroundColor: '#0D9488',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
               >
-                <Ionicons name="add" size={16} color="#FFF" />
+                <Ionicons name="add" size={15} color="#FFF" />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Empty Jars Taken Back Stepper */}
-          <View className="flex-row items-center justify-between py-2">
+          <View className="flex-row items-center justify-between py-1.5">
             <View>
-              <Text className="text-xs font-black text-slate-800 dark:text-slate-200">
+              <Text className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 Empty Jars Taken Back
               </Text>
-              <Text className="text-[10px] font-semibold text-slate-400">
-                Collected into delivery vehicle
+              <Text className="text-[10px] text-slate-400">
+                Loaded into vehicle
               </Text>
             </View>
 
@@ -334,9 +311,9 @@ export default function HelperAddCustomerScreen() {
               <TouchableOpacity
                 onPress={() => setEmptyJarsReceived(prev => Math.max(0, prev - 1))}
                 style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 7,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 6,
                   backgroundColor: '#F1F5F9',
                   borderWidth: 1,
                   borderColor: '#CBD5E1',
@@ -344,25 +321,25 @@ export default function HelperAddCustomerScreen() {
                   justifyContent: 'center'
                 }}
               >
-                <Ionicons name="remove" size={16} color="#0F172A" />
+                <Ionicons name="remove" size={15} color="#0F172A" />
               </TouchableOpacity>
 
-              <Text style={{ fontSize: 16, fontWeight: '900', color: '#0284C7', minWidth: 26, textAlign: 'center' }}>
+              <Text style={{ fontSize: 15, fontWeight: '900', color: '#0284C7', minWidth: 24, textAlign: 'center' }}>
                 {emptyJarsReceived}
               </Text>
 
               <TouchableOpacity
                 onPress={() => setEmptyJarsReceived(prev => prev + 1)}
                 style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 7,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 6,
                   backgroundColor: '#0284C7',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
               >
-                <Ionicons name="add" size={16} color="#FFF" />
+                <Ionicons name="add" size={15} color="#FFF" />
               </TouchableOpacity>
             </View>
           </View>
@@ -370,14 +347,14 @@ export default function HelperAddCustomerScreen() {
 
         {/* Delivery Note */}
         <Input
-          label="Special Delivery Note (Optional)"
-          placeholder="e.g. Ring bell twice, regular 2 jars every Mon & Thu"
+          label="Delivery Note (Optional)"
+          placeholder="Enter delivery note"
           value={notes}
           onChangeText={setNotes}
         />
 
         {/* Action Buttons in Rectangular Format */}
-        <View className="flex-row gap-2 mt-2">
+        <View className="flex-row gap-2 mt-1.5">
           <TouchableOpacity
             onPress={() => router.replace(ROUTES.HELPER.DASHBOARD)}
             style={{
@@ -405,11 +382,11 @@ export default function HelperAddCustomerScreen() {
               height: 42,
               borderRadius: 8,
               overflow: 'hidden',
-              elevation: 3,
+              elevation: 2,
               shadowColor: '#0D9488',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.25,
-              shadowRadius: 3,
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.2,
+              shadowRadius: 2,
             }}
             activeOpacity={0.85}
           >
@@ -430,9 +407,9 @@ export default function HelperAddCustomerScreen() {
                 <ActivityIndicator size="small" color="#FFF" />
               ) : (
                 <>
-                  <Ionicons name="checkmark-circle" size={17} color="#FFF" />
+                  <Ionicons name="checkmark-circle" size={16} color="#FFF" />
                   <Text style={{ fontSize: 13, fontWeight: '900', color: '#FFF', letterSpacing: 0.2 }}>
-                    Save Client & Sync Plant
+                    Save Client
                   </Text>
                 </>
               )}
