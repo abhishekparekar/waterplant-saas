@@ -18,6 +18,9 @@ export interface UserProfile {
   fssaiLicense?: string;
   capacityDaily?: number;
   customerId?: string;
+  planName?: string;
+  daysRemaining?: number;
+  status?: 'active' | 'expiring' | 'suspended';
   createdAt: string;
   updatedAt: string;
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -6,14 +6,18 @@ import {
   TouchableOpacity, 
   Modal, 
   Alert, 
-  TextInput,
+  TextInput, 
   Image, 
-  Linking,
-  ActivityIndicator
+  Linking, 
+  ActivityIndicator,
+  RefreshControl 
 } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { collection, getDocs, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/services/firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { formatCurrency } from '@/utils/invoiceUtils';
 import { Button } from '@/components/common/Button';
 
@@ -24,54 +28,57 @@ export default function RechargeScreen() {
   const [payModalVisible, setPayModalVisible] = useState(false);
   const [utrNumber, setUtrNumber] = useState('');
   const [activating, setActivating] = useState(false);
+  const [loadingPlans, setLoadingPlans] = useState(false);
 
   const [walletAlerts, setWalletAlerts] = useState(842);
-  const [planDaysLeft, setPlanDaysLeft] = useState(14);
+  const [planDaysLeft, setPlanDaysLeft] = useState(user?.daysRemaining ?? 28);
+  const [currentPlanName, setCurrentPlanName] = useState(user?.planName || 'Growth Business Plan');
 
-  // Subscription Plans
-  const subscriptionPlans = [
+  // Dynamic Subscription Plans from Super Admin
+  const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([
     {
-      id: 'pro_monthly',
-      name: 'Pro Plant Plan',
-      price: 999,
-      duration: '1 Month',
-      popular: true,
-      features: [
-        'Unlimited Customers & Ledger',
-        'Unlimited Drivers & Delivery Routes',
-        'WhatsApp Invoices & Monthly Cards',
-        'Live Fleet Telemetry & P&L Reports',
-        'Automatic Cloud Backup'
-      ]
-    },
-    {
-      id: 'pro_annual',
-      name: 'Pro Annual Plant (Save 20%)',
-      price: 9599,
-      duration: '1 Year',
-      popular: false,
-      features: [
-        'Everything in Pro Monthly',
-        'Free 5,000 WhatsApp Alert Credits',
-        'Custom Plant Logo on Invoices',
-        'Priority 24/7 Phone Support',
-        '2 Months Free'
-      ]
-    },
-    {
-      id: 'starter_monthly',
+      id: 'plan_starter',
       name: 'Starter Plant Plan',
       price: 499,
       duration: '1 Month',
+      interval: 'Monthly',
       popular: false,
       features: [
-        'Up to 150 Customers',
-        'Up to 2 Delivery Drivers',
-        'Basic Billing & Invoices',
-        'Standard Reports'
+        'Up to 50 Clients & Bottle Ledger',
+        '1 Delivery Driver Route',
+        'Basic Billing & Customer Portal',
+        'Cloud Backup'
+      ]
+    },
+    {
+      id: 'plan_growth',
+      name: 'Growth Business Plan',
+      price: 999,
+      duration: '1 Month',
+      interval: 'Monthly',
+      popular: true,
+      features: [
+        'Up to 250 Clients & Live Ledger',
+        '3 Delivery Drivers with GPS',
+        'Automated Billing & UPI QR',
+        'Staff Route Add & Shift Log'
+      ]
+    },
+    {
+      id: 'plan_pro',
+      name: 'Enterprise Pro Plant',
+      price: 1999,
+      duration: '1 Month',
+      interval: 'Monthly',
+      popular: false,
+      features: [
+        'Unlimited Customers & Multi-Vehicle',
+        'P&L Reports & Circular Gauges',
+        'Priority 24/7 Helpline',
+        'Custom Plant Branding'
       ]
     }
-  ];
+  ]);
 
   // WhatsApp Alert Credit Packs
   const alertPacks = [
@@ -80,26 +87,109 @@ export default function RechargeScreen() {
     { id: 'pack_5000', alerts: 5000, price: 1299, popular: false },
   ];
 
+  // Load Plans from Firestore / Storage (Configured by Super Admin)
+  const fetchSaaSPlans = async () => {
+    try {
+      setLoadingPlans(true);
+      const snap = await getDocs(collection(db, 'tenants', 'waterplant', 'saas_plans'));
+      const list: any[] = [];
+      snap.forEach(d => {
+        const data = d.data();
+        if (data.active !== false) {
+          list.push({
+            id: d.id,
+            name: data.name,
+            price: data.price,
+            duration: data.interval || '1 Month',
+            interval: data.interval || 'Monthly',
+            popular: data.popular || false,
+            features: data.features || [
+              `${data.clientLimit || 'Unlimited Clients'}`,
+              `${data.driverLimit || 'Unlimited Drivers'}`,
+              'Full Ledger & Dispatch Access',
+              'Cloud Backup'
+            ]
+          });
+        }
+      });
+
+      if (list.length > 0) {
+        setSubscriptionPlans(list);
+      } else {
+        const cached = await AsyncStorage.getItem('@nextwater_saas_plans');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setSubscriptionPlans(parsed.filter((p: any) => p.active !== false).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            duration: p.interval || '1 Month',
+            interval: p.interval || 'Monthly',
+            popular: p.popular || false,
+            features: p.features
+          })));
+        }
+      }
+    } catch (err) {
+      console.warn('Recharge screen plans note:', err);
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSaaSPlans();
+  }, []);
+
   const handleOpenPay = (item: any, isAlertPack = false) => {
     setSelectedPlan({ ...item, isAlertPack });
     setUtrNumber('');
     setPayModalVisible(true);
   };
 
-  const handleConfirmRecharge = () => {
+  const handleConfirmRecharge = async () => {
     setActivating(true);
-    setTimeout(() => {
-      setActivating(false);
-      setPayModalVisible(false);
+    const addedDays = (selectedPlan?.duration?.includes('Year') || selectedPlan?.interval?.includes('Year')) ? 365 : 30;
+    const newTotalDays = planDaysLeft + addedDays;
 
+    try {
       if (selectedPlan?.isAlertPack) {
         setWalletAlerts(prev => prev + selectedPlan.alerts);
-        Alert.alert('Pack Activated', `Successfully added ${selectedPlan.alerts} WhatsApp alert credits to your plant wallet.`);
+        Alert.alert('Pack Activated', `Successfully added ${selectedPlan.alerts} WhatsApp alert credits.`);
       } else {
-        setPlanDaysLeft(prev => prev + (selectedPlan?.duration === '1 Year' ? 365 : 30));
-        Alert.alert('Subscription Active', `Your ${selectedPlan?.name} has been activated successfully.`);
+        setPlanDaysLeft(newTotalDays);
+        setCurrentPlanName(selectedPlan.name);
+
+        // Update Plant subscription in Firestore so Super Admin immediately sees it
+        const targetDocId = user?.uid || `owner_${user?.phoneNumber || '8485877633'}`;
+        try {
+          await updateDoc(doc(db, 'tenants', 'waterplant', 'users', targetDocId), {
+            planName: selectedPlan.name,
+            daysRemaining: newTotalDays,
+            status: 'active',
+          });
+        } catch (fsErr) {
+          await setDoc(doc(db, 'tenants', 'waterplant', 'users', targetDocId), {
+            businessName: user?.businessName || 'Abhiraj Water Plant',
+            displayName: user?.displayName || 'Abhishek',
+            role: 'owner',
+            planName: selectedPlan.name,
+            daysRemaining: newTotalDays,
+            status: 'active',
+          }, { merge: true });
+        }
+
+        Alert.alert(
+          'Subscription Activated! 🎉',
+          `Your ${selectedPlan.name} is now active for ${newTotalDays} days. Cloud ledger synced.`
+        );
       }
-    }, 800);
+    } catch (err: any) {
+      Alert.alert('Notice', 'Subscription registered locally.');
+    } finally {
+      setActivating(false);
+      setPayModalVisible(false);
+    }
   };
 
   return (
@@ -206,7 +296,7 @@ export default function RechargeScreen() {
 
               {/* Features List */}
               <View className="gap-1.5 mb-3.5 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-                {plan.features.map((feat, i) => (
+                {plan.features?.map((feat: string, i: number) => (
                   <View key={i} className="flex-row items-center gap-2">
                     <Ionicons name="checkmark-circle" size={15} color="#059669" />
                     <Text className="text-xs font-medium text-slate-600 dark:text-slate-300">

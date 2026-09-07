@@ -10,7 +10,8 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  Linking
+  Linking,
+  StyleSheet
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
@@ -20,13 +21,14 @@ import { pickImageFromGallery } from '@/utils/imagePicker';
 import { ROUTES } from '@/constants/routes';
 
 export default function SuperAdminProfileScreen() {
-  const { user, signOut, updateProfile } = useAuthStore();
+  const { user, signOut, updateProfile, setUser } = useAuthStore();
   const router = useRouter();
 
   const [photoUploading, setPhotoUploading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || 'Super Administrator');
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '8485877633');
+  const [helpline, setHelpline] = useState('8485877633');
   const [saving, setSaving] = useState(false);
 
   const handlePickGalleryPhoto = async () => {
@@ -35,7 +37,7 @@ export default function SuperAdminProfileScreen() {
       const uri = await pickImageFromGallery();
       if (uri) {
         await updateProfile({ photoURL: uri });
-        Alert.alert('Success', 'Super Admin profile photo updated from gallery!');
+        Alert.alert('Success', 'Super Admin profile photo updated!');
       }
     } catch (e: any) {
       Alert.alert('Upload Error', e.message || 'Failed to update photo.');
@@ -51,13 +53,34 @@ export default function SuperAdminProfileScreen() {
         displayName: displayName.trim(),
         phoneNumber: phoneNumber.trim(),
       });
-      Alert.alert('Profile Saved', 'Super Admin details saved successfully.');
+      Alert.alert('Profile Saved', 'Super Admin master profile updated.');
       setModalVisible(false);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not update profile.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSwitchRole = (targetRole: 'owner' | 'helper' | 'customer') => {
+    Alert.alert(
+      'Switch Preview Mode',
+      `Jump directly into ${targetRole.toUpperCase()} mode?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Switch Now',
+          onPress: () => {
+            if (user) {
+              setUser({ ...user, role: targetRole });
+            }
+            if (targetRole === 'owner') router.replace(ROUTES.OWNER.DASHBOARD);
+            else if (targetRole === 'helper') router.replace(ROUTES.HELPER.DASHBOARD);
+            else if (targetRole === 'customer') router.replace(ROUTES.CUSTOMER.DASHBOARD);
+          }
+        }
+      ]
+    );
   };
 
   const handleSignOut = () => {
@@ -76,182 +99,490 @@ export default function SuperAdminProfileScreen() {
 
   return (
     <ScrollView 
-      className="flex-1 bg-slate-50 dark:bg-slate-900 px-3.5 py-3" 
-      contentContainerStyle={{ paddingBottom: 80 }}
+      style={styles.container}
+      contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
       showsVerticalScrollIndicator={false}
     >
       {/* 1. Super Admin Profile Header with LinearGradient */}
-      <View className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xs mb-3">
+      <View style={styles.profileCard}>
         <LinearGradient
-          colors={['#4F46E5', '#3730A3']}
+          colors={['#0F172A', '#1E293B']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          className="h-16 w-full"
+          style={styles.profileBanner}
         />
-        <View className="items-center px-4 pb-4 -mt-8">
-          <View className="relative mb-2">
-            <View className="w-18 h-18 rounded-full bg-slate-900 justify-center items-center shadow-md overflow-hidden border-3 border-white dark:border-slate-800">
+        <View style={styles.profileContent}>
+          <View style={styles.avatarWrap}>
+            <View style={styles.avatarBox}>
               {user?.photoURL ? (
                 <Image source={{ uri: user.photoURL }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
               ) : (
-                <Text className="text-2xl font-black text-white">SA</Text>
+                <Text style={styles.avatarText}>SA</Text>
               )}
             </View>
             <TouchableOpacity 
               onPress={handlePickGalleryPhoto}
               disabled={photoUploading}
-              className="absolute bottom-0 right-0 bg-indigo-700 w-6 h-6 rounded-full justify-center items-center border-2 border-white dark:border-slate-800 shadow-sm active:opacity-75"
+              style={styles.cameraBtn}
               activeOpacity={0.7}
             >
-              <Ionicons name="camera" size={11} color="#FFF" />
+              <Ionicons name="camera" size={13} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
 
-          <Text className="text-[16px] font-black text-slate-900 dark:text-slate-50 text-center">
+          <Text style={styles.adminName}>
             {user?.displayName || 'Super Administrator'}
           </Text>
 
-          <Text className="text-[12px] font-bold text-indigo-600 dark:text-indigo-400 mt-0.5 text-center">
-            icoded@gmail.com
+          <Text style={styles.adminEmail}>
+            {user?.email || 'icoded@gmail.com'}
           </Text>
 
-          <View className="flex-row items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 mt-2">
-            <Ionicons name="shield-checkmark" size={12} color="#6366F1" />
-            <Text className="text-[9.5px] font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
-              Root SaaS Super Admin Access
+          <View style={styles.rootBadge}>
+            <Ionicons name="shield-checkmark" size={12} color="#0284C7" />
+            <Text style={styles.rootBadgeText}>
+              ROOT SAAS MASTER ACCESS
             </Text>
           </View>
         </View>
       </View>
 
-      {/* 2. Platform Information Section */}
-      <View className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs mb-3">
-        <View className="flex-row justify-between items-center mb-2.5 pb-2 border-b border-slate-100 dark:border-slate-700/50">
-          <Text className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
-            Master Console Information
-          </Text>
-          <TouchableOpacity onPress={() => setModalVisible(true)} className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/50 rounded-md">
-            <Text className="text-3xs font-black text-indigo-600">Edit Info</Text>
+      {/* 2. Master Platform Info Section */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Master Account Information</Text>
+          <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.editPill}>
+            <Text style={styles.editPillText}>Edit Details</Text>
           </TouchableOpacity>
         </View>
 
-        <View className="flex-row items-center gap-2.5 py-1.5">
-          <View className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 justify-center items-center">
-            <Ionicons name="mail" size={14} color="#6366F1" />
+        <View style={styles.infoRow}>
+          <View style={styles.infoIconBox}>
+            <Ionicons name="mail" size={15} color="#0284C7" />
           </View>
-          <View className="flex-1">
-            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Root Email</Text>
-            <Text className="text-[13.5px] font-black text-slate-800 dark:text-slate-100 mt-0.5">icoded@gmail.com</Text>
-          </View>
-        </View>
-
-        <View className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
-
-        <View className="flex-row items-center gap-2.5 py-1.5">
-          <View className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 justify-center items-center">
-            <Ionicons name="call" size={14} color="#059669" />
-          </View>
-          <View className="flex-1">
-            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Helpline Hotline</Text>
-            <Text className="text-[13.5px] font-black text-emerald-600 mt-0.5">{user?.phoneNumber || '8485877633'}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.infoLabel}>Master Cloud Email</Text>
+            <Text style={styles.infoValue}>{user?.email || 'icoded@gmail.com'}</Text>
           </View>
         </View>
 
-        <View className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
+        <View style={styles.divider} />
 
-        <View className="flex-row items-center gap-2.5 py-1.5">
-          <View className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-950/50 justify-center items-center">
-            <Ionicons name="server" size={14} color="#0284C7" />
+        <View style={styles.infoRow}>
+          <View style={styles.infoIconBox}>
+            <Ionicons name="call" size={15} color="#0284C7" />
           </View>
-          <View className="flex-1">
-            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Database Node</Text>
-            <Text className="text-[13.5px] font-black text-sky-600 mt-0.5">Google Cloud Firestore (Production)</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.infoLabel}>Direct Contact Mobile</Text>
+            <Text style={styles.infoValue}>+91 {phoneNumber}</Text>
+          </View>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.infoRow}>
+          <View style={styles.infoIconBox}>
+            <Ionicons name="headset" size={15} color="#0284C7" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.infoLabel}>Platform 24/7 Helpline</Text>
+            <Text style={styles.infoValue}>+91 {helpline}</Text>
           </View>
         </View>
       </View>
 
-      {/* 3. Support & Hotline Contact */}
-      <View className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs mb-4">
-        <Text className="text-xs font-black text-slate-900 dark:text-slate-100 mb-2.5 pb-2 border-b border-slate-100 dark:border-slate-700/50 uppercase tracking-wider">
-          Helpline Contact Center
-        </Text>
+      {/* 3. Testing & Mode Switcher */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Quick Platform Preview</Text>
+        <Text style={styles.cardSub}>Jump directly into other roles for end-to-end testing:</Text>
 
-        <TouchableOpacity 
-          onPress={() => Linking.openURL('tel:8485877633').catch(() => {})}
-          className="bg-emerald-600 py-3 rounded-xl flex-row justify-center items-center gap-2 active:opacity-80 mb-2"
-        >
-          <Ionicons name="call" size={16} color="#FFF" />
-          <Text className="text-xs font-black text-white">Call Support (8485877633)</Text>
-        </TouchableOpacity>
+        <View style={styles.switcherGrid}>
+          <TouchableOpacity 
+            onPress={() => handleSwitchRole('owner')}
+            style={styles.switcherBtn}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.switcherIcon, { backgroundColor: '#E0F2FE' }]}>
+              <Ionicons name="business" size={18} color="#0284C7" />
+            </View>
+            <Text style={styles.switcherText}>Owner App</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity 
-          onPress={() => Linking.openURL('https://wa.me/918485877633?text=SuperAdmin%20Support').catch(() => {})}
-          className="bg-slate-800 py-3 rounded-xl flex-row justify-center items-center gap-2 active:opacity-80"
-        >
-          <Ionicons name="logo-whatsapp" size={16} color="#10B981" />
-          <Text className="text-xs font-black text-white">WhatsApp Helpline</Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => handleSwitchRole('helper')}
+            style={styles.switcherBtn}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.switcherIcon, { backgroundColor: '#DCFCE7' }]}>
+              <Ionicons name="bicycle" size={18} color="#10B981" />
+            </View>
+            <Text style={styles.switcherText}>Staff App</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={() => handleSwitchRole('customer')}
+            style={styles.switcherBtn}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.switcherIcon, { backgroundColor: '#FCE7F3' }]}>
+              <Ionicons name="water" size={18} color="#EC4899" />
+            </View>
+            <Text style={styles.switcherText}>Customer App</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Sign Out Button */}
+      {/* 4. Log Out Button */}
       <TouchableOpacity 
         onPress={handleSignOut}
-        className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 h-11 rounded-xl flex-row justify-center items-center gap-2 active:opacity-75"
-        activeOpacity={0.8}
+        style={styles.logoutBtn}
+        activeOpacity={0.7}
       >
-        <Ionicons name="power" size={16} color="#E11D48" />
-        <Text className="text-xs font-black text-rose-600">Sign Out Super Admin</Text>
+        <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+        <Text style={styles.logoutBtnText}>Log Out Master Console</Text>
       </TouchableOpacity>
 
-      {/* EDIT MODAL */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 justify-end bg-black/60"
-        >
-          <View className="bg-white dark:bg-slate-800 rounded-t-3xl p-5 pb-8">
-            <View className="flex-row justify-between items-center pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
-              <Text className="text-sm font-black text-slate-900 dark:text-slate-100">
-                Edit Super Admin Details
-              </Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 justify-center items-center">
-                <Ionicons name="close" size={18} color="#64748B" />
+      {/* Edit Profile Modal */}
+      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Master Credentials</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="close-circle" size={24} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text className="text-3xs font-bold text-slate-400 uppercase mb-1">Display Name</Text>
-              <TextInput
-                value={displayName}
-                onChangeText={setDisplayName}
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 mb-3"
-              />
+            <Text style={styles.inputLabel}>Admin Full Name</Text>
+            <TextInput 
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Super Administrator"
+              placeholderTextColor="#94A3B8"
+              style={styles.textInput}
+            />
 
-              <Text className="text-3xs font-bold text-slate-400 uppercase mb-1">Support Phone Number</Text>
-              <TextInput
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                keyboardType="phone-pad"
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 mb-4"
-              />
+            <Text style={styles.inputLabel}>Admin Mobile Number</Text>
+            <TextInput 
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+              placeholder="8485877633"
+              placeholderTextColor="#94A3B8"
+              style={styles.textInput}
+            />
 
-              <View className="flex-row gap-3">
-                <TouchableOpacity onPress={() => setModalVisible(false)} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 items-center">
-                  <Text className="text-xs font-bold text-slate-600 dark:text-slate-300">Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleSaveProfile} className="flex-1 py-3 rounded-xl bg-indigo-600 items-center">
-                  <Text className="text-xs font-black text-white">{saving ? 'Saving...' : 'Save'}</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+            <Text style={styles.inputLabel}>Platform Helpline Number</Text>
+            <TextInput 
+              value={helpline}
+              onChangeText={setHelpline}
+              keyboardType="phone-pad"
+              placeholder="8485877633"
+              placeholderTextColor="#94A3B8"
+              style={styles.textInput}
+            />
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelBtn}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSaveProfile} style={styles.saveBtn}>
+                <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Changes'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  profileCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  profileBanner: {
+    height: 70,
+    width: '100%',
+  },
+  profileContent: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    marginTop: -38,
+  },
+  avatarWrap: {
+    position: 'relative',
+    marginBottom: 8,
+  },
+  avatarBox: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    overflow: 'hidden',
+    elevation: 3,
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  cameraBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#0284C7',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    elevation: 2,
+  },
+  adminName: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  adminEmail: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0284C7',
+    marginTop: 2,
+  },
+  rootBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginTop: 8,
+  },
+  rootBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#0284C7',
+    letterSpacing: 0.5,
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cardTitle: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#0F172A',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  cardSub: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 3,
+    marginBottom: 12,
+  },
+  editPill: {
+    backgroundColor: '#F0F9FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  editPillText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#0284C7',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 6,
+  },
+  infoIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#F0F9FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoLabel: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  infoValue: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 4,
+  },
+  switcherGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  switcherBtn: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  switcherIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  switcherText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#334155',
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    paddingVertical: 13,
+    borderRadius: 14,
+    marginTop: 4,
+  },
+  logoutBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#DC2626',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  inputLabel: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 4,
+    marginTop: 10,
+  },
+  textInput: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: '#0F172A',
+    fontWeight: '600',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+  },
+  cancelBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  saveBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#0284C7',
+    alignItems: 'center',
+  },
+  saveBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+});

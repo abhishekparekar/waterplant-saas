@@ -18,6 +18,7 @@ export interface Order {
   totalAmount: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  paymentMethod?: string;
   amountPaid: number;
   deliveryAddress: string;
   deliveryDate: string; // ISO date string

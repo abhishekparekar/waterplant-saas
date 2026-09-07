@@ -65,6 +65,8 @@ export default function HelperAddCustomerScreen() {
         emptyBottlesHeld: initialJars,
         depositPaid: deposit,
         balance: 0,
+        password: 'water123',
+        businessName: user?.businessName || 'Abhiraj Water Plant',
       });
 
       // 2. If initial jars delivered > 0, log a delivery run directly

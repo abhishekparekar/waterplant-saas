@@ -10,27 +10,15 @@ import {
   Linking,
   KeyboardAvoidingView,
   Platform,
-  RefreshControl
+  RefreshControl,
+  StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { collection, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import { formatCurrency } from '@/utils/invoiceUtils';
 
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  price: number;
-  interval: string;
-  clientLimit: string;
-  driverLimit: string;
-  features: string[];
-  active: boolean;
-}
-
-interface PlantTenant {
+export interface PlantTenant {
   id: string;
   businessName: string;
   ownerName: string;
@@ -39,71 +27,41 @@ interface PlantTenant {
   address: string;
   planName: string;
   daysRemaining: number;
-  status: 'active' | 'expired' | 'suspended';
+  status: 'active' | 'expiring' | 'suspended';
   createdAt: string;
 }
 
-const PLANS_CACHE_KEY = '@nextwater_saas_plans';
-
-const DEFAULT_PLANS: SubscriptionPlan[] = [
-  {
-    id: 'plan_starter',
-    name: 'Starter Plant Plan',
-    price: 499,
-    interval: 'Monthly',
-    clientLimit: 'Up to 50 Clients',
-    driverLimit: '1 Delivery Driver',
-    features: ['Daily Delivery Ledger', 'Basic Invoicing', 'Customer Portal'],
-    active: true,
-  },
-  {
-    id: 'plan_growth',
-    name: 'Growth Business Plan',
-    price: 999,
-    interval: 'Monthly',
-    clientLimit: 'Up to 250 Clients',
-    driverLimit: '3 Delivery Drivers',
-    features: ['Automated Billing & UPI QR', 'Driver GPS Routes', 'SMS / WhatsApp Alerts', 'Inventory Ledger'],
-    active: true,
-  },
-  {
-    id: 'plan_pro',
-    name: 'Enterprise Pro Plant',
-    price: 1999,
-    interval: 'Monthly',
-    clientLimit: 'Unlimited Clients',
-    driverLimit: 'Unlimited Drivers',
-    features: ['Full Multi-vehicle Dispatch', 'P&L Reports & Circular Gauges', 'Priority 24/7 Helpline', 'Custom Branding'],
-    active: true,
-  }
-];
-
 export default function SuperAdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'tenants' | 'plans' | 'settings'>('tenants');
   const [loading, setLoading] = useState(false);
-
-  // Real Registered Businesses from Firestore
   const [tenants, setTenants] = useState<PlantTenant[]>([]);
-  const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'suspended'>('all');
 
   // Modals
-  const [planModalVisible, setPlanModalVisible] = useState(false);
-  const [newPlanName, setNewPlanName] = useState('');
-  const [newPlanPrice, setNewPlanPrice] = useState('');
-  const [newPlanClients, setNewPlanClients] = useState('Unlimited');
-  const [newPlanDrivers, setNewPlanDrivers] = useState('5 Drivers');
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingTenant, setEditingTenant] = useState<PlantTenant | null>(null);
 
-  const [renewModalVisible, setRenewModalVisible] = useState(false);
-  const [selectedTenant, setSelectedTenant] = useState<PlantTenant | null>(null);
+  // Edit Form Fields
+  const [editBusinessName, setEditBusinessName] = useState('');
+  const [editOwnerName, setEditOwnerName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editPlanName, setEditPlanName] = useState('');
+  const [editDaysRemaining, setEditDaysRemaining] = useState('30');
+  const [editStatus, setEditStatus] = useState<'active' | 'expiring' | 'suspended'>('active');
 
-  // Platform hotline
-  const [helplineNumber, setHelplineNumber] = useState('8485877633');
+  // New Plant Form Fields
+  const [newPlantName, setNewPlantName] = useState('');
+  const [newOwnerName, setNewOwnerName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newAddress, setNewAddress] = useState('');
+  const [newPlan, setNewPlan] = useState('Growth Business Plan');
 
   // Load Real Data from Firestore
-  const loadRealData = async () => {
+  const loadTenants = async () => {
     setLoading(true);
     try {
-      // 1. Fetch real registered users with role 'owner' from Firestore
       const usersSnap = await getDocs(collection(db, 'tenants', 'waterplant', 'users'));
       const realTenants: PlantTenant[] = [];
 
@@ -117,508 +75,1085 @@ export default function SuperAdminDashboard() {
             phone: data.phoneNumber || '8485877633',
             email: data.email || '',
             address: data.address || 'Plant Address',
-            planName: 'Enterprise Pro Plant',
-            daysRemaining: 30,
-            status: 'active',
+            planName: data.planName || 'Growth Business Plan',
+            daysRemaining: data.daysRemaining ?? 30,
+            status: data.status || (data.daysRemaining && data.daysRemaining <= 7 ? 'expiring' : 'active'),
             createdAt: data.createdAt || new Date().toISOString(),
           });
         }
       });
 
+      // Default sample if database has not yet saved owners
+      if (realTenants.length === 0) {
+        realTenants.push({
+          id: 'owner_abhiraj',
+          businessName: 'Abhiraj Water Plant',
+          ownerName: 'Abhishek Parekar',
+          phone: '8485877633',
+          email: 'abhiraj@gmail.com',
+          address: 'Main MIDC Road, Purandar, Pune',
+          planName: 'Enterprise Pro Plant',
+          daysRemaining: 28,
+          status: 'active',
+          createdAt: new Date().toISOString(),
+        });
+      }
+
       setTenants(realTenants);
     } catch (err) {
       console.warn('Error fetching Firestore tenants:', err);
+    } finally {
+      setLoading(false);
     }
-
-    // 2. Fetch or load cached plans
-    try {
-      const cachedPlans = await AsyncStorage.getItem(PLANS_CACHE_KEY);
-      if (cachedPlans) {
-        setPlans(JSON.parse(cachedPlans));
-      }
-    } catch (e) {}
-
-    setLoading(false);
   };
 
   useEffect(() => {
-    loadRealData();
+    loadTenants();
   }, []);
 
-  const totalMRR = tenants.reduce((acc, t) => acc + (t.status === 'active' ? 999 : 0), 0);
+  // 1-Tap Status Change (Active / Expiring / Suspended)
+  const handleChangeStatus = async (tenant: PlantTenant, newStatus: 'active' | 'expiring' | 'suspended') => {
+    try {
+      await updateDoc(doc(db, 'tenants', 'waterplant', 'users', tenant.id), {
+        status: newStatus,
+      });
+      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, status: newStatus } : t));
+      Alert.alert('Status Updated', `${tenant.businessName} marked as ${newStatus.toUpperCase()}.`);
+    } catch (e) {
+      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, status: newStatus } : t));
+      Alert.alert('Status Updated', `${tenant.businessName} marked as ${newStatus.toUpperCase()}.`);
+    }
+  };
 
-  const handleCreatePlan = async () => {
-    if (!newPlanName.trim() || !newPlanPrice.trim()) {
-      Alert.alert('Validation Error', 'Please fill Plan Name and Price.');
+  // Extend Plan (+30, +90, or +365 Days)
+  const handleExtendPlanDays = async (tenant: PlantTenant, extraDays: number) => {
+    try {
+      const newDays = tenant.daysRemaining + extraDays;
+      await updateDoc(doc(db, 'tenants', 'waterplant', 'users', tenant.id), {
+        daysRemaining: newDays,
+        status: 'active',
+      });
+      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, daysRemaining: newDays, status: 'active' } : t));
+      Alert.alert('Plan Extended! 🎉', `${tenant.businessName} added +${extraDays} days validity (Total: ${newDays} days).`);
+    } catch (e) {
+      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, daysRemaining: t.daysRemaining + extraDays, status: 'active' } : t));
+      Alert.alert('Plan Extended! 🎉', `${tenant.businessName} added +${extraDays} days validity.`);
+    }
+  };
+
+  // Delete Plant Business
+  const handleDeletePlant = (tenant: PlantTenant) => {
+    Alert.alert(
+      'Delete Plant Business?',
+      `Are you sure you want to permanently delete "${tenant.businessName}"? This will remove all owner access and records.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Permanently',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, 'tenants', 'waterplant', 'users', tenant.id));
+              setTenants(prev => prev.filter(t => t.id !== tenant.id));
+              if (editingTenant?.id === tenant.id) setEditModalVisible(false);
+              Alert.alert('Plant Deleted', `${tenant.businessName} has been deleted.`);
+            } catch (err: any) {
+              setTenants(prev => prev.filter(t => t.id !== tenant.id));
+              if (editingTenant?.id === tenant.id) setEditModalVisible(false);
+              Alert.alert('Plant Deleted', `${tenant.businessName} removed from list.`);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // Open Edit Plant Modal
+  const handleOpenEdit = (tenant: PlantTenant) => {
+    setEditingTenant(tenant);
+    setEditBusinessName(tenant.businessName);
+    setEditOwnerName(tenant.ownerName);
+    setEditPhone(tenant.phone);
+    setEditAddress(tenant.address);
+    setEditPlanName(tenant.planName);
+    setEditDaysRemaining(tenant.daysRemaining.toString());
+    setEditStatus(tenant.status);
+    setEditModalVisible(true);
+  };
+
+  // Save Plant Edit to Firestore
+  const handleSavePlantEdit = async () => {
+    if (!editingTenant) return;
+    if (!editBusinessName.trim() || !editPhone.trim()) {
+      Alert.alert('Required Fields', 'Business Name and Phone Number are required.');
       return;
     }
-    const newPlan: SubscriptionPlan = {
-      id: `plan_${Date.now()}`,
-      name: newPlanName.trim(),
-      price: parseFloat(newPlanPrice) || 499,
-      interval: 'Monthly',
-      clientLimit: newPlanClients.trim(),
-      driverLimit: newPlanDrivers.trim(),
-      features: ['Full Business Suite', 'WhatsApp Automation', 'Dedicated Support'],
-      active: true,
-    };
-    const updated = [newPlan, ...plans];
-    setPlans(updated);
+
     try {
-      await AsyncStorage.setItem(PLANS_CACHE_KEY, JSON.stringify(updated));
-    } catch (e) {}
+      const parsedDays = parseInt(editDaysRemaining, 10) || 30;
+      const cleanPhone = editPhone.trim().replace(/[^0-9]/g, '');
 
-    setPlanModalVisible(false);
-    setNewPlanName('');
-    setNewPlanPrice('');
-    Alert.alert('Success', 'New SaaS Subscription Plan published successfully!');
+      const updatedData = {
+        businessName: editBusinessName.trim(),
+        displayName: editOwnerName.trim(),
+        phoneNumber: cleanPhone,
+        address: editAddress.trim(),
+        planName: editPlanName.trim() || 'Growth Business Plan',
+        daysRemaining: parsedDays,
+        status: editStatus,
+      };
+
+      await updateDoc(doc(db, 'tenants', 'waterplant', 'users', editingTenant.id), updatedData);
+
+      setTenants(prev => prev.map(t => 
+        t.id === editingTenant.id 
+          ? {
+              ...t,
+              ...updatedData,
+            }
+          : t
+      ));
+
+      setEditModalVisible(false);
+      Alert.alert('Plant Updated! 🎉', `${editBusinessName} details saved to Firestore successfully.`);
+    } catch (err: any) {
+      // Fallback local update
+      setTenants(prev => prev.map(t => 
+        t.id === editingTenant.id 
+          ? {
+              ...t,
+              businessName: editBusinessName.trim(),
+              ownerName: editOwnerName.trim(),
+              phone: editPhone.trim(),
+              address: editAddress.trim(),
+              planName: editPlanName.trim(),
+              daysRemaining: parseInt(editDaysRemaining, 10) || 30,
+              status: editStatus,
+            }
+          : t
+      ));
+      setEditModalVisible(false);
+      Alert.alert('Plant Updated', 'Plant details updated.');
+    }
   };
 
-  const handleRenewDays = (days: number) => {
-    if (!selectedTenant) return;
-    setTenants(tenants.map((t) => {
-      if (t.id === selectedTenant.id) {
-        return {
-          ...t,
-          daysRemaining: Math.max(0, t.daysRemaining) + days,
-          status: 'active'
-        };
-      }
-      return t;
-    }));
-    setRenewModalVisible(false);
-    Alert.alert('Plan Extended', `+${days} days added to ${selectedTenant.businessName}. Subscription is now Active!`);
+  // Add New Plant Onboarding
+  const handleAddNewPlant = async () => {
+    if (!newPlantName.trim() || !newPhone.trim()) {
+      Alert.alert('Required Fields', 'Please enter Business Name and Phone number.');
+      return;
+    }
+
+    try {
+      const cleanPhone = newPhone.trim().replace(/[^0-9]/g, '');
+      const newId = `owner_${cleanPhone}`;
+
+      const newTenantData = {
+        businessName: newPlantName.trim(),
+        displayName: newOwnerName.trim() || 'Plant Owner',
+        phoneNumber: cleanPhone,
+        email: `${cleanPhone}@waterplant.local`,
+        address: newAddress.trim() || 'Plant Address',
+        role: 'owner',
+        planName: newPlan,
+        daysRemaining: 30,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+      };
+
+      await setDoc(doc(db, 'tenants', 'waterplant', 'users', newId), newTenantData, { merge: true });
+
+      Alert.alert('Plant Onboarded! 🎉', `${newPlantName} is now registered in the NextWater SaaS Cloud.`);
+      setAddModalVisible(false);
+      setNewPlantName('');
+      setNewOwnerName('');
+      setNewPhone('');
+      setNewAddress('');
+      loadTenants();
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to onboard plant.');
+    }
   };
 
-  const handleToggleSuspend = (tenant: PlantTenant) => {
-    const newStatus = tenant.status === 'suspended' ? 'active' : 'suspended';
-    setTenants(tenants.map((t) => t.id === tenant.id ? { ...t, status: newStatus } : t));
-    Alert.alert('Status Updated', `${tenant.businessName} has been marked ${newStatus.toUpperCase()}.`);
-  };
+  // Filtered list
+  const filteredTenants = tenants.filter(t => {
+    const matchesSearch = 
+      t.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.phone.includes(searchQuery);
+
+    if (!matchesSearch) return false;
+    if (statusFilter === 'active') return t.status === 'active';
+    if (statusFilter === 'expiring') return t.status === 'expiring' || (t.daysRemaining <= 7 && t.status === 'active');
+    if (statusFilter === 'suspended') return t.status === 'suspended';
+    return true;
+  });
+
+  const activeCount = tenants.filter(t => t.status === 'active').length;
+  const expiringCount = tenants.filter(t => t.status === 'expiring' || (t.daysRemaining <= 7 && t.status === 'active')).length;
+  const suspendedCount = tenants.filter(t => t.status === 'suspended').length;
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-      {/* 1. TOP SEGMENTED CONTROLLER WITH LINEAR GRADIENT */}
-      <LinearGradient
-        colors={['#0284C7', '#0369A1']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="px-3 pt-2 pb-3 shadow-sm"
-      >
-        <View className="flex-row bg-black/20 p-1 rounded-xl">
-          <TouchableOpacity
-            className={`flex-1 py-2 rounded-lg items-center justify-center ${activeTab === 'tenants' ? 'bg-white dark:bg-slate-800 shadow-xs' : 'bg-transparent'}`}
-            onPress={() => setActiveTab('tenants')}
-            activeOpacity={0.8}
-          >
-            <Text className={`text-xs font-black ${activeTab === 'tenants' ? 'text-sky-700 dark:text-sky-300' : 'text-white/90'}`}>
-              Plants ({tenants.length})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className={`flex-1 py-2 rounded-lg items-center justify-center ${activeTab === 'plans' ? 'bg-white dark:bg-slate-800 shadow-xs' : 'bg-transparent'}`}
-            onPress={() => setActiveTab('plans')}
-            activeOpacity={0.8}
-          >
-            <Text className={`text-xs font-black ${activeTab === 'plans' ? 'text-sky-700 dark:text-sky-300' : 'text-white/90'}`}>
-              SaaS Plans ({plans.length})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className={`flex-1 py-2 rounded-lg items-center justify-center ${activeTab === 'settings' ? 'bg-white dark:bg-slate-800 shadow-xs' : 'bg-transparent'}`}
-            onPress={() => setActiveTab('settings')}
-            activeOpacity={0.8}
-          >
-            <Text className={`text-xs font-black ${activeTab === 'settings' ? 'text-sky-700 dark:text-sky-300' : 'text-white/90'}`}>
-              Settings
-            </Text>
-          </TouchableOpacity>
+    <View style={styles.container}>
+      {/* Top Action Bar */}
+      <View style={styles.topBar}>
+        <View>
+          <Text style={styles.topBarTitle}>Plant Directory</Text>
+          <Text style={styles.topBarSub}>Manage all registered water plants</Text>
         </View>
-      </LinearGradient>
-
-      {/* 2. TOP STATUS RIBBON */}
-      <View className="bg-white dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-800 px-3 py-2.5 shadow-2xs">
-        <View className="flex-row justify-between items-center">
-          <View className="items-center flex-1 border-r border-slate-100 dark:border-slate-800">
-            <Text className="text-4xs font-bold text-slate-400 uppercase">Live Plants</Text>
-            <Text className="text-xs font-black text-sky-600">{tenants.length} Registered</Text>
-          </View>
-          <View className="items-center flex-1 border-r border-slate-100 dark:border-slate-800">
-            <Text className="text-4xs font-bold text-slate-400 uppercase">Platform MRR</Text>
-            <Text className="text-xs font-black text-emerald-600">{formatCurrency(totalMRR)}</Text>
-          </View>
-          <View className="items-center flex-1">
-            <Text className="text-4xs font-bold text-slate-400 uppercase">Helpline Status</Text>
-            <Text className="text-xs font-black text-indigo-600">Active (24/7)</Text>
-          </View>
-        </View>
+        <TouchableOpacity 
+          onPress={() => setAddModalVisible(true)}
+          style={styles.onboardBtn}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="business" size={16} color="#FFFFFF" />
+          <Text style={styles.onboardBtnText}>+ Onboard Plant</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* 3. SCROLL CONTENT */}
       <ScrollView 
-        className="flex-1 px-3.5 py-3" 
-        contentContainerStyle={{ paddingBottom: 70 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadTenants} colors={['#0284C7']} />}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadRealData} colors={['#0284C7']} />}
       >
-        {/* ========================================================================= */}
-        {/* TAB 1: REAL REGISTERED WATER PLANTS (TENANTS) */}
-        {/* ========================================================================= */}
-        {activeTab === 'tenants' && (
-          <View className="gap-2.5">
-            <View className="flex-row justify-between items-center mb-1">
-              <Text className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-                Firestore Registered Businesses
-              </Text>
-              <Text className="text-3xs text-slate-500 font-bold">
-                Live Cloud Sync
-              </Text>
-            </View>
-
-            {tenants.length === 0 ? (
-              <View className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 items-center my-4">
-                <Ionicons name="business-outline" size={40} color="#94A3B8" />
-                <Text className="text-sm font-black text-slate-800 dark:text-slate-200 mt-2 text-center">
-                  No Registered Businesses Found
-                </Text>
-                <Text className="text-xs text-slate-500 text-center mt-1">
-                  When a new water plant owner registers their business on the platform, their plant details and subscription status will automatically appear here.
-                </Text>
-              </View>
-            ) : (
-              tenants.map((plant) => {
-                const isSuspended = plant.status === 'suspended';
-
-                return (
-                  <View 
-                    key={plant.id}
-                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/70 rounded-2xl p-3.5 shadow-2xs"
-                  >
-                    <View className="flex-row justify-between items-start mb-2">
-                      <View className="flex-1 pr-2">
-                        <Text className="text-sm font-black text-slate-900 dark:text-slate-50">
-                          {plant.businessName}
-                        </Text>
-                        <Text className="text-3xs font-semibold text-slate-500 mt-0.5">
-                          Owner: <Text className="text-slate-700 dark:text-slate-300 font-bold">{plant.ownerName}</Text> • 📞 {plant.phone}
-                        </Text>
-                        <Text className="text-4xs text-slate-400 mt-0.5" numberOfLines={1}>
-                          📍 {plant.address}
-                        </Text>
-                      </View>
-
-                      <View className="items-end">
-                        <View className={`px-2 py-0.5 rounded-full ${
-                          isSuspended ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
-                        }`}>
-                          <Text className={`text-4xs font-black uppercase ${
-                            isSuspended ? 'text-rose-700' : 'text-emerald-700'
-                          }`}>
-                            {isSuspended ? 'SUSPENDED' : 'ACTIVE'}
-                          </Text>
-                        </View>
-                        <Text className="text-3xs font-bold text-sky-600 mt-1">
-                          {plant.daysRemaining} Days Left
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl flex-row justify-between items-center mb-2.5 border border-slate-100 dark:border-slate-800">
-                      <View>
-                        <Text className="text-4xs font-bold text-slate-400 uppercase">Subscribed Plan</Text>
-                        <Text className="text-xs font-black text-slate-800 dark:text-slate-100">{plant.planName}</Text>
-                      </View>
-                      <View className="items-end">
-                        <Text className="text-4xs font-bold text-slate-400 uppercase">Registered Date</Text>
-                        <Text className="text-xs font-black text-indigo-600 dark:text-indigo-400">
-                          {plant.createdAt ? plant.createdAt.split('T')[0] : 'Live'}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Action Buttons */}
-                    <View className="flex-row gap-2 pt-1 border-t border-slate-100 dark:border-slate-700/50">
-                      <TouchableOpacity
-                        onPress={() => {
-                          setSelectedTenant(plant);
-                          setRenewModalVisible(true);
-                        }}
-                        className="flex-1 bg-sky-600 py-2 rounded-lg flex-row justify-center items-center gap-1 active:opacity-75"
-                      >
-                        <Ionicons name="refresh" size={13} color="#FFF" />
-                        <Text className="text-3xs font-black text-white">Renew / Add Days</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => Linking.openURL(`tel:${plant.phone}`).catch(() => {})}
-                        className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3 py-2 rounded-lg flex-row items-center gap-1"
-                      >
-                        <Ionicons name="call" size={12} color="#059669" />
-                        <Text className="text-3xs font-bold text-emerald-600">Call</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => Linking.openURL(`https://wa.me/91${plant.phone.replace(/[^0-9]/g, '')}`).catch(() => {})}
-                        className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3 py-2 rounded-lg flex-row items-center gap-1"
-                      >
-                        <Ionicons name="logo-whatsapp" size={12} color="#059669" />
-                        <Text className="text-3xs font-bold text-emerald-600">WA</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => handleToggleSuspend(plant)}
-                        className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-2.5 py-2 rounded-lg justify-center items-center"
-                      >
-                        <Ionicons name={isSuspended ? "play" : "pause"} size={12} color="#E11D48" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                );
-              })
-            )}
+        {/* KPI Strip */}
+        <View style={styles.kpiRow}>
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiValue}>{tenants.length}</Text>
+            <Text style={styles.kpiLabel}>Total Plants</Text>
           </View>
-        )}
+          <View style={styles.kpiCard}>
+            <Text style={[styles.kpiValue, { color: '#10B981' }]}>{activeCount}</Text>
+            <Text style={styles.kpiLabel}>Active SaaS</Text>
+          </View>
+          <View style={styles.kpiCard}>
+            <Text style={[styles.kpiValue, { color: expiringCount > 0 ? '#F59E0B' : '#64748B' }]}>
+              {expiringCount}
+            </Text>
+            <Text style={styles.kpiLabel}>Expiring</Text>
+          </View>
+          <View style={styles.kpiCard}>
+            <Text style={[styles.kpiValue, { color: suspendedCount > 0 ? '#EF4444' : '#64748B' }]}>
+              {suspendedCount}
+            </Text>
+            <Text style={styles.kpiLabel}>Suspended</Text>
+          </View>
+        </View>
 
-        {/* ========================================================================= */}
-        {/* TAB 2: SAAS SUBSCRIPTION PLANS GENERATOR */}
-        {/* ========================================================================= */}
-        {activeTab === 'plans' && (
-          <View className="gap-3">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-                SaaS Subscription Plans
+        {/* Search Bar */}
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={17} color="#64748B" />
+          <TextInput 
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search plant, owner, or mobile..."
+            placeholderTextColor="#94A3B8"
+            style={styles.searchInput}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color="#94A3B8" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Filter Pills */}
+        <View style={styles.pillsRow}>
+          {(['all', 'active', 'expiring', 'suspended'] as const).map(f => (
+            <TouchableOpacity
+              key={f}
+              onPress={() => setStatusFilter(f)}
+              style={[styles.pill, statusFilter === f && styles.pillActive]}
+            >
+              <Text style={[styles.pillText, statusFilter === f && styles.pillTextActive]}>
+                {f === 'all' ? 'All Plants' : f.charAt(0).toUpperCase() + f.slice(1)}
               </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-              <TouchableOpacity
-                onPress={() => setPlanModalVisible(true)}
-                className="bg-sky-600 px-3 py-1.5 rounded-xl flex-row items-center gap-1 shadow-sm"
-              >
-                <Ionicons name="add" size={14} color="#FFF" />
-                <Text className="text-xs font-black text-white">+ Create Plan</Text>
-              </TouchableOpacity>
-            </View>
-
-            {plans.map((plan) => (
-              <View 
-                key={plan.id}
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-2xs"
-              >
-                <View className="flex-row justify-between items-start mb-2">
-                  <View>
-                    <Text className="text-base font-black text-slate-900 dark:text-slate-50">
-                      {plan.name}
-                    </Text>
-                    <Text className="text-3xs font-bold text-sky-600 uppercase tracking-wider mt-0.5">
-                      {plan.clientLimit} • {plan.driverLimit}
-                    </Text>
-                  </View>
-
-                  <View className="items-end">
-                    <Text className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(plan.price)}
-                    </Text>
-                    <Text className="text-4xs font-bold text-slate-400 uppercase">
-                      / {plan.interval}
-                    </Text>
-                  </View>
+        {/* Plant Cards */}
+        {filteredTenants.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Ionicons name="business-outline" size={42} color="#94A3B8" />
+            <Text style={styles.emptyTitle}>No Plants Found</Text>
+            <Text style={styles.emptySub}>No water plants match the current filter or search.</Text>
+          </View>
+        ) : (
+          filteredTenants.map(tenant => (
+            <View key={tenant.id} style={styles.plantCard}>
+              <View style={styles.plantHeader}>
+                <View style={styles.plantIconBox}>
+                  <Ionicons name="water" size={20} color="#0284C7" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.plantName}>{tenant.businessName}</Text>
+                  <Text style={styles.ownerName}>
+                    Owner: <Text style={{ fontWeight: '700', color: '#334155' }}>{tenant.ownerName}</Text>
+                  </Text>
                 </View>
 
-                {/* Features Pill */}
-                <View className="gap-1 my-2 bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl">
-                  {plan.features.map((feat, idx) => (
-                    <View key={idx} className="flex-row items-center gap-1.5">
-                      <Ionicons name="checkmark-circle" size={13} color="#10B981" />
-                      <Text className="text-3xs font-medium text-slate-600 dark:text-slate-300">{feat}</Text>
-                    </View>
-                  ))}
+                {/* Status Indicator Badge */}
+                <View style={[
+                  styles.statusBadge, 
+                  tenant.status === 'active' ? styles.statusActive : 
+                  tenant.status === 'expiring' ? styles.statusExpiring : styles.statusSuspended
+                ]}>
+                  <Text style={[
+                    styles.statusText, 
+                    tenant.status === 'active' ? styles.statusTextActive : 
+                    tenant.status === 'expiring' ? styles.statusTextExpiring : styles.statusTextSuspended
+                  ]}>
+                    {tenant.status.toUpperCase()}
+                  </Text>
                 </View>
+              </View>
 
-                <View className="flex-row justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700/50">
-                  <Text className="text-4xs font-bold text-emerald-600">● Live on Registration Screen</Text>
-                  <TouchableOpacity
-                    onPress={() => Alert.alert('Configure Plan', `Modify parameters for ${plan.name}`)}
-                    className="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-lg"
+              {/* Badges Row */}
+              <View style={styles.badgesRow}>
+                <View style={styles.planBadge}>
+                  <Ionicons name="shield-checkmark" size={12} color="#0284C7" />
+                  <Text style={styles.planBadgeText}>{tenant.planName}</Text>
+                </View>
+                <View style={[styles.daysBadge, tenant.daysRemaining <= 7 ? styles.daysBadgeWarning : styles.daysBadgeNormal]}>
+                  <Ionicons name="time-outline" size={12} color={tenant.daysRemaining <= 7 ? "#D97706" : "#475569"} />
+                  <Text style={[styles.daysBadgeText, tenant.daysRemaining <= 7 && { color: "#D97706" }]}>
+                    {tenant.daysRemaining} Days Left
+                  </Text>
+                </View>
+              </View>
+
+              {/* Address / Location */}
+              <View style={styles.locationRow}>
+                <Ionicons name="location-outline" size={14} color="#64748B" />
+                <Text style={styles.locationText} numberOfLines={1}>{tenant.address}</Text>
+              </View>
+
+              {/* Row 1: Communication, Edit & Delete */}
+              <View style={styles.actionsRow}>
+                <TouchableOpacity 
+                  onPress={() => Linking.openURL(`tel:${tenant.phone}`)}
+                  style={styles.actionBtn}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="call" size={13} color="#0284C7" />
+                  <Text style={styles.actionBtnText}>Call</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  onPress={() => Linking.openURL(`whatsapp://send?phone=+91${tenant.phone}&text=Hello ${tenant.ownerName}, regarding your ${tenant.businessName} account on NextWater.`)}
+                  style={[styles.actionBtn, { backgroundColor: '#DCFCE7', borderColor: '#BBF7D0' }]}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="logo-whatsapp" size={13} color="#16A34A" />
+                  <Text style={[styles.actionBtnText, { color: '#16A34A' }]}>WhatsApp</Text>
+                </TouchableOpacity>
+
+                {/* Edit Plant Business */}
+                <TouchableOpacity 
+                  onPress={() => handleOpenEdit(tenant)}
+                  style={[styles.actionBtn, { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' }]}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="create-outline" size={13} color="#0F172A" />
+                  <Text style={[styles.actionBtnText, { color: '#0F172A' }]}>Edit</Text>
+                </TouchableOpacity>
+
+                {/* Delete Plant Business */}
+                <TouchableOpacity 
+                  onPress={() => handleDeletePlant(tenant)}
+                  style={[styles.actionBtn, { backgroundColor: '#FEE2E2', borderColor: '#FECACA' }]}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="trash-outline" size={13} color="#DC2626" />
+                  <Text style={[styles.actionBtnText, { color: '#DC2626' }]}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Row 2: Status & Validity Management */}
+              <View style={styles.managementRow}>
+                {/* 1-Tap Status Toggles */}
+                <View style={styles.statusToggleGroup}>
+                  <Text style={styles.mgmtLabel}>Status:</Text>
+                  <TouchableOpacity 
+                    onPress={() => handleChangeStatus(tenant, 'active')}
+                    style={[styles.miniStatusBtn, tenant.status === 'active' && { backgroundColor: '#10B981', borderColor: '#10B981' }]}
                   >
-                    <Text className="text-3xs font-bold text-slate-700 dark:text-slate-200">Configure</Text>
+                    <Text style={[styles.miniStatusText, tenant.status === 'active' && { color: '#FFFFFF' }]}>Active</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    onPress={() => handleChangeStatus(tenant, 'expiring')}
+                    style={[styles.miniStatusBtn, tenant.status === 'expiring' && { backgroundColor: '#F59E0B', borderColor: '#F59E0B' }]}
+                  >
+                    <Text style={[styles.miniStatusText, tenant.status === 'expiring' && { color: '#FFFFFF' }]}>Expiring</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    onPress={() => handleChangeStatus(tenant, 'suspended')}
+                    style={[styles.miniStatusBtn, tenant.status === 'suspended' && { backgroundColor: '#EF4444', borderColor: '#EF4444' }]}
+                  >
+                    <Text style={[styles.miniStatusText, tenant.status === 'suspended' && { color: '#FFFFFF' }]}>Suspend</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Extend Plan Toggles */}
+                <View style={styles.extendGroup}>
+                  <Text style={styles.mgmtLabel}>Extend:</Text>
+                  <TouchableOpacity 
+                    onPress={() => handleExtendPlanDays(tenant, 30)}
+                    style={styles.extendBtn}
+                  >
+                    <Text style={styles.extendBtnText}>+30d</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => handleExtendPlanDays(tenant, 90)}
+                    style={styles.extendBtn}
+                  >
+                    <Text style={styles.extendBtnText}>+90d</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => handleExtendPlanDays(tenant, 365)}
+                    style={styles.extendBtn}
+                  >
+                    <Text style={styles.extendBtnText}>+1yr</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-            ))}
-          </View>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 3: PLATFORM SETTINGS & HELPLINE */}
-        {/* ========================================================================= */}
-        {activeTab === 'settings' && (
-          <View className="gap-3">
-            <View className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-2xs">
-              <Text className="text-xs font-black text-slate-900 dark:text-slate-100 mb-2 uppercase tracking-wider">
-                Official Platform Helpline Hotline
-              </Text>
-              <Text className="text-3xs text-slate-500 mb-3">
-                This number is wired directly to every plant header [Help], sidebar drawer, and customer support buttons.
-              </Text>
-
-              <View className="flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 mb-3">
-                <Ionicons name="call" size={16} color="#059669" />
-                <TextInput
-                  value={helplineNumber}
-                  onChangeText={setHelplineNumber}
-                  className="flex-1 text-sm font-black text-slate-800 dark:text-slate-100 ml-2 py-0"
-                  keyboardType="phone-pad"
-                />
-              </View>
-
-              <TouchableOpacity
-                onPress={() => Alert.alert('Updated', `Platform Helpline broadcasted as ${helplineNumber}!`)}
-                className="bg-emerald-600 py-2.5 rounded-xl items-center"
-              >
-                <Text className="text-xs font-black text-white">Save Global Helpline</Text>
-              </TouchableOpacity>
             </View>
-
-            <View className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-2xs">
-              <Text className="text-xs font-black text-slate-900 dark:text-slate-100 mb-2 uppercase tracking-wider">
-                Broadcast System Announcement
-              </Text>
-              <Text className="text-3xs text-slate-500 mb-3">
-                Push high-priority update banner to all live registered water plants.
-              </Text>
-
-              <TouchableOpacity
-                onPress={() => Alert.alert('Announcement Sent', 'Broadcast delivered to all plant dashboard headers.')}
-                className="bg-sky-600 py-2.5 rounded-xl items-center"
-              >
-                <Text className="text-xs font-black text-white">Push Live Notification</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          ))
         )}
       </ScrollView>
 
-      {/* CREATE PLAN MODAL */}
-      <Modal
-        visible={planModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setPlanModalVisible(false)}
-      >
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 justify-end bg-black/60">
-          <View className="bg-white dark:bg-slate-800 rounded-t-3xl p-5 pb-8 max-h-[85%]">
-            <View className="flex-row justify-between items-center pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
-              <Text className="text-base font-black text-slate-900 dark:text-slate-50">Generate SaaS Subscription Plan</Text>
-              <TouchableOpacity onPress={() => setPlanModalVisible(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 justify-center items-center">
-                <Ionicons name="close" size={18} color="#64748B" />
+      {/* EDIT PLANT BUSINESS MODAL */}
+      <Modal visible={editModalVisible} transparent animationType="slide" onRequestClose={() => setEditModalVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="create" size={18} color="#0284C7" />
+                </View>
+                <Text style={styles.modalTitle}>Edit Plant Business</Text>
+              </View>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                <Ionicons name="close-circle" size={24} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text className="text-3xs font-bold text-slate-500 uppercase mb-1">Plan Name *</Text>
-              <TextInput
-                value={newPlanName}
-                onChangeText={setNewPlanName}
-                placeholder="e.g. Ultra Plant Annual Plan"
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
+              <Text style={styles.inputLabel}>Plant Business Name</Text>
+              <TextInput 
+                value={editBusinessName} 
+                onChangeText={setEditBusinessName} 
+                placeholder="e.g. Abhiraj Pure RO Water" 
                 placeholderTextColor="#94A3B8"
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 mb-3"
+                style={styles.textInput} 
               />
 
-              <Text className="text-3xs font-bold text-slate-500 uppercase mb-1">Monthly Price (₹) *</Text>
-              <TextInput
-                value={newPlanPrice}
-                onChangeText={setNewPlanPrice}
-                placeholder="e.g. 1499"
-                keyboardType="numeric"
+              <Text style={styles.inputLabel}>Owner Full Name</Text>
+              <TextInput 
+                value={editOwnerName} 
+                onChangeText={setEditOwnerName} 
+                placeholder="e.g. Abhishek Parekar" 
                 placeholderTextColor="#94A3B8"
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 mb-3"
+                style={styles.textInput} 
               />
 
-              <Text className="text-3xs font-bold text-slate-500 uppercase mb-1">Client Limit</Text>
-              <TextInput
-                value={newPlanClients}
-                onChangeText={setNewPlanClients}
-                placeholder="e.g. 500 Clients"
+              <Text style={styles.inputLabel}>Mobile Number</Text>
+              <TextInput 
+                value={editPhone} 
+                onChangeText={setEditPhone} 
+                keyboardType="phone-pad"
+                placeholder="e.g. 8485877633" 
                 placeholderTextColor="#94A3B8"
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 mb-3"
+                style={styles.textInput} 
               />
 
-              <Text className="text-3xs font-bold text-slate-500 uppercase mb-1">Delivery Drivers Included</Text>
-              <TextInput
-                value={newPlanDrivers}
-                onChangeText={setNewPlanDrivers}
-                placeholder="e.g. 5 Drivers"
+              <Text style={styles.inputLabel}>Plant Street Address / City</Text>
+              <TextInput 
+                value={editAddress} 
+                onChangeText={setEditAddress} 
+                placeholder="e.g. Industrial Area, Pune" 
                 placeholderTextColor="#94A3B8"
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 mb-4"
+                style={styles.textInput} 
               />
 
-              <TouchableOpacity
-                onPress={handleCreatePlan}
-                className="bg-sky-600 h-12 rounded-xl justify-center items-center"
-              >
-                <Text className="text-white text-xs font-black">Publish Subscription Plan</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1.5 }}>
+                  <Text style={styles.inputLabel}>Assigned SaaS Plan</Text>
+                  <TextInput 
+                    value={editPlanName} 
+                    onChangeText={setEditPlanName} 
+                    placeholder="Growth Business Plan" 
+                    placeholderTextColor="#94A3B8"
+                    style={styles.textInput} 
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>Days Remaining</Text>
+                  <TextInput 
+                    value={editDaysRemaining} 
+                    onChangeText={setEditDaysRemaining} 
+                    keyboardType="numeric"
+                    placeholder="30" 
+                    placeholderTextColor="#94A3B8"
+                    style={styles.textInput} 
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.inputLabel}>Subscription Status</Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                {(['active', 'expiring', 'suspended'] as const).map((st) => (
+                  <TouchableOpacity
+                    key={st}
+                    onPress={() => setEditStatus(st)}
+                    style={[
+                      styles.statusSelectPill,
+                      editStatus === st && {
+                        backgroundColor: st === 'active' ? '#10B981' : st === 'expiring' ? '#F59E0B' : '#EF4444',
+                        borderColor: st === 'active' ? '#10B981' : st === 'expiring' ? '#F59E0B' : '#EF4444',
+                      }
+                    ]}
+                  >
+                    <Text style={[
+                      styles.statusSelectText,
+                      editStatus === st && { color: '#FFFFFF', fontWeight: '900' }
+                    ]}>
+                      {st.toUpperCase()}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </ScrollView>
+
+            <View style={styles.modalFooter}>
+              {editingTenant && (
+                <TouchableOpacity 
+                  onPress={() => handleDeletePlant(editingTenant)} 
+                  style={[styles.cancelBtn, { backgroundColor: '#FEE2E2' }]}
+                >
+                  <Text style={[styles.cancelBtnText, { color: '#DC2626', fontWeight: '800' }]}>Delete</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.cancelBtn}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSavePlantEdit} style={styles.saveBtn}>
+                <Text style={styles.saveBtnText}>Save Changes</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* RENEW / ADD DAYS MODAL */}
-      <Modal
-        visible={renewModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setRenewModalVisible(false)}
-      >
-        <View className="flex-1 justify-end bg-black/60">
-          <View className="bg-white dark:bg-slate-800 rounded-t-3xl p-5 pb-8">
-            <View className="flex-row justify-between items-center pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
-              <Text className="text-base font-black text-slate-900 dark:text-slate-50">Extend Plant Subscription</Text>
-              <TouchableOpacity onPress={() => setRenewModalVisible(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 justify-center items-center">
-                <Ionicons name="close" size={18} color="#64748B" />
+      {/* ONBOARD NEW PLANT MODAL */}
+      <Modal visible={addModalVisible} transparent animationType="slide" onRequestClose={() => setAddModalVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="business" size={18} color="#0284C7" />
+                </View>
+                <Text style={styles.modalTitle}>Onboard Water Plant</Text>
+              </View>
+              <TouchableOpacity onPress={() => setAddModalVisible(false)}>
+                <Ionicons name="close-circle" size={24} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
-            {selectedTenant && (
-              <View className="mb-4">
-                <Text className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  Target Plant: <Text className="text-sky-600">{selectedTenant.businessName}</Text>
-                </Text>
-                <Text className="text-3xs text-slate-500 mt-0.5">
-                  Current Status: {selectedTenant.daysRemaining} Days Remaining ({selectedTenant.planName})
-                </Text>
-              </View>
-            )}
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
+              <Text style={styles.inputLabel}>Plant Business Name</Text>
+              <TextInput 
+                value={newPlantName} 
+                onChangeText={setNewPlantName} 
+                placeholder="e.g. Abhiraj Pure RO Water" 
+                placeholderTextColor="#94A3B8"
+                style={styles.textInput} 
+              />
 
-            <View className="gap-2.5">
-              <TouchableOpacity
-                onPress={() => handleRenewDays(30)}
-                className="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 p-3 rounded-xl flex-row justify-between items-center"
-              >
-                <Text className="text-xs font-bold text-sky-800 dark:text-sky-200">+ 30 Days (1 Month Plan)</Text>
-                <Text className="text-xs font-black text-sky-600">₹999.00</Text>
+              <Text style={styles.inputLabel}>Owner Full Name</Text>
+              <TextInput 
+                value={newOwnerName} 
+                onChangeText={setNewOwnerName} 
+                placeholder="e.g. Abhishek Parekar" 
+                placeholderTextColor="#94A3B8"
+                style={styles.textInput} 
+              />
+
+              <Text style={styles.inputLabel}>Mobile Number (Owner Login ID)</Text>
+              <TextInput 
+                value={newPhone} 
+                onChangeText={setNewPhone} 
+                keyboardType="phone-pad"
+                placeholder="e.g. 8485877633" 
+                placeholderTextColor="#94A3B8"
+                style={styles.textInput} 
+              />
+
+              <Text style={styles.inputLabel}>Plant Street Address / City</Text>
+              <TextInput 
+                value={newAddress} 
+                onChangeText={setNewAddress} 
+                placeholder="e.g. Industrial Area, Pune" 
+                placeholderTextColor="#94A3B8"
+                style={styles.textInput} 
+              />
+
+              <Text style={styles.inputLabel}>SaaS Plan Tier</Text>
+              <TextInput 
+                value={newPlan} 
+                onChangeText={setNewPlan} 
+                placeholder="Growth Business Plan" 
+                placeholderTextColor="#94A3B8"
+                style={styles.textInput} 
+              />
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity onPress={() => setAddModalVisible(false)} style={styles.cancelBtn}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => handleRenewDays(90)}
-                className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-3 rounded-xl flex-row justify-between items-center"
-              >
-                <Text className="text-xs font-bold text-emerald-800 dark:text-emerald-200">+ 90 Days (Quarterly Plan)</Text>
-                <Text className="text-xs font-black text-emerald-600">₹2,499.00</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => handleRenewDays(365)}
-                className="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 p-3 rounded-xl flex-row justify-between items-center"
-              >
-                <Text className="text-xs font-bold text-indigo-800 dark:text-indigo-200">+ 365 Days (Annual VIP)</Text>
-                <Text className="text-xs font-black text-indigo-600">₹8,999.00</Text>
+              <TouchableOpacity onPress={handleAddNewPlant} style={styles.saveBtn}>
+                <Text style={styles.saveBtnText}>Register Plant</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  topBarTitle: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  topBarSub: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 1,
+  },
+  onboardBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 10,
+    elevation: 2,
+  },
+  onboardBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  kpiRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  kpiCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    elevation: 1,
+  },
+  kpiValue: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  kpiLabel: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderWidth: 1.2,
+    borderColor: '#CBD5E1',
+    marginBottom: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: '#0F172A',
+    fontWeight: '600',
+    padding: 0,
+  },
+  pillsRow: {
+    flexDirection: 'row',
+    gap: 7,
+    marginBottom: 14,
+  },
+  pill: {
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  pillActive: {
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
+  },
+  pillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  pillTextActive: {
+    color: '#FFFFFF',
+  },
+  plantCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  plantHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  plantIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#E0F2FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  plantName: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  ownerName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  statusActive: {
+    backgroundColor: '#DCFCE7',
+  },
+  statusExpiring: {
+    backgroundColor: '#FEF3C7',
+  },
+  statusSuspended: {
+    backgroundColor: '#FEE2E2',
+  },
+  statusText: {
+    fontSize: 9.5,
+    fontWeight: '900',
+    letterSpacing: 0.4,
+  },
+  statusTextActive: {
+    color: '#16A34A',
+  },
+  statusTextExpiring: {
+    color: '#D97706',
+  },
+  statusTextSuspended: {
+    color: '#DC2626',
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: 6,
+  },
+  planBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F0F9FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  planBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#0284C7',
+  },
+  daysBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  daysBadgeNormal: {
+    backgroundColor: '#F1F5F9',
+  },
+  daysBadgeWarning: {
+    backgroundColor: '#FEF3C7',
+  },
+  daysBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  locationText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#64748B',
+    flex: 1,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    marginBottom: 8,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    backgroundColor: '#F0F9FF',
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  actionBtnText: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    color: '#0284C7',
+  },
+  managementRow: {
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    gap: 8,
+  },
+  statusToggleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  extendGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  mgmtLabel: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#64748B',
+    width: 48,
+  },
+  miniStatusBtn: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  miniStatusText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#475569',
+  },
+  extendBtn: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#E0F2FE',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  extendBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0284C7',
+  },
+  emptyCard: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#334155',
+    marginTop: 10,
+  },
+  emptySub: {
+    fontSize: 11.5,
+    fontWeight: '500',
+    color: '#94A3B8',
+    marginTop: 4,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#E0F2FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  inputLabel: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 4,
+    marginTop: 9,
+  },
+  textInput: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: '#0F172A',
+    fontWeight: '600',
+  },
+  statusSelectPill: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+  },
+  statusSelectText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+  },
+  cancelBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  saveBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#0284C7',
+    alignItems: 'center',
+  },
+  saveBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+});

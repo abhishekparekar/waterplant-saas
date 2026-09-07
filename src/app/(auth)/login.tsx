@@ -115,7 +115,7 @@ export default function LoginScreen() {
         phoneNumber: matched.phone,
         address: matched.address,
         customerId: matched.id,
-        businessName: 'NextWater Plant',
+        businessName: matched.businessName || 'Abhiraj Water Plant',
         createdAt: matched.createdAt || new Date().toISOString(),
         updatedAt: matched.updatedAt || new Date().toISOString()
       });

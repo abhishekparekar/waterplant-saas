@@ -317,7 +317,6 @@ export default function HelperLayout() {
             borderTopRightRadius: 28,
             borderBottomRightRadius: 28,
             overflow: 'hidden',
-            paddingTop: Platform.OS === 'android' ? insets.top + 8 : insets.top,
           }}>
             {/* Sidebar Top Header with LinearGradient Card matching Owner Design */}
             <LinearGradient
@@ -326,8 +325,8 @@ export default function HelperLayout() {
               end={{ x: 1, y: 1 }}
               style={{
                 paddingHorizontal: 16,
-                paddingTop: 16,
-                paddingBottom: 14,
+                paddingTop: Platform.OS === 'android' ? 14 : Math.max(insets.top, 14),
+                paddingBottom: 13,
                 borderBottomWidth: 1,
                 borderBottomColor: isDark ? '#1E293B' : '#E2E8F0',
               }}

@@ -11,6 +11,7 @@ export interface Customer {
   emptyBottlesHeld: number; // number of 20L empty bottles currently with customer
   depositPaid: number; // deposit amount paid for bottles
   balance: number; // outstanding balance (positive for unpaid dues, negative for credit)
+  businessName?: string;
   createdAt: string;
   updatedAt: string;
 }

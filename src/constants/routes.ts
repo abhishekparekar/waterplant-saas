@@ -37,12 +37,16 @@ export const ROUTES = {
   // Customer Routes
   CUSTOMER: {
     DASHBOARD: '/(customer)/dashboard' as const,
+    HISTORY: '/(customer)/history' as const,
   },
 
   // Super Admin SaaS Platform Routes
   ADMIN: {
     DASHBOARD: '/(admin)/dashboard' as const,
     PLANS: '/(admin)/plans' as const,
+    REPORTS: '/(admin)/reports' as const,
+    ANALYTICS: '/(admin)/analytics' as const,
+    PROFILE: '/(admin)/profile' as const,
     TENANTS: '/(admin)/tenants' as const,
   },
 

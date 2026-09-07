@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCustomerStore } from '@/store/customerStore';
+import { useAuthStore } from '@/store/authStore';
 import { CustomerCard } from '@/components/customer/CustomerCard';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
@@ -27,6 +28,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 export default function CustomersScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const { customers, loading, fetchCustomers, addCustomer, updateCustomer, deleteCustomer } = useCustomerStore();
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -107,6 +109,7 @@ export default function CustomersScreen() {
         emptyBottlesHeld: parseInt(emptyBottles) || 0,
         depositPaid: parseFloat(depositPaid) || 0,
         balance: 0,
+        businessName: user?.businessName || 'Abhiraj Water Plant',
       });
       setModalVisible(false);
       setName('');
