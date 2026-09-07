@@ -6,6 +6,7 @@ import { useCustomerStore } from '@/store/customerStore';
 import { useStaffStore } from '@/store/staffStore';
 import { formatCurrency } from '@/utils/invoiceUtils';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -211,29 +212,68 @@ export default function OwnerDashboard() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-900">
       {/* 1. TOP SEGMENTED CONTROLLER ([ Menu ] | [ Live Dashboard ]) */}
-      <View className="bg-sky-600 px-3.5 pt-1 pb-2">
-        <View className="flex-row bg-slate-200/90 dark:bg-slate-800/90 p-1 rounded-xl">
+      <LinearGradient
+        colors={['#0284C7', '#0369A1']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ paddingHorizontal: 14, paddingTop: 4, paddingBottom: 8 }}
+      >
+        <View style={{ flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.22)', padding: 3, borderRadius: 12 }}>
           <TouchableOpacity
-            className={`flex-1 py-1.5 rounded-lg items-center justify-center ${activeTab === 'menu' ? 'bg-white dark:bg-slate-700 shadow-2xs' : 'bg-transparent'}`}
+            style={{
+              flex: 1,
+              paddingVertical: 6,
+              borderRadius: 9,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: activeTab === 'menu' ? '#FFFFFF' : 'transparent',
+              elevation: activeTab === 'menu' ? 2 : 0,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: activeTab === 'menu' ? 0.15 : 0,
+              shadowRadius: 2,
+            }}
             onPress={() => setActiveTab('menu')}
             activeOpacity={0.8}
           >
-            <Text className={`text-[12px] font-extrabold ${activeTab === 'menu' ? 'text-slate-900 dark:text-slate-100' : 'text-slate-600 dark:text-slate-400'}`}>
+            <Text style={{
+              fontSize: 12,
+              fontWeight: '900',
+              color: activeTab === 'menu' ? '#0284C7' : '#FFFFFF',
+              letterSpacing: 0.2,
+            }}>
               Menu
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            className={`flex-1 py-1.5 rounded-lg items-center justify-center ${activeTab === 'dashboard' ? 'bg-white dark:bg-slate-700 shadow-2xs' : 'bg-transparent'}`}
+            style={{
+              flex: 1,
+              paddingVertical: 6,
+              borderRadius: 9,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: activeTab === 'dashboard' ? '#FFFFFF' : 'transparent',
+              elevation: activeTab === 'dashboard' ? 2 : 0,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: activeTab === 'dashboard' ? 0.15 : 0,
+              shadowRadius: 2,
+            }}
             onPress={() => setActiveTab('dashboard')}
             activeOpacity={0.8}
           >
-            <Text className={`text-[12px] font-extrabold ${activeTab === 'dashboard' ? 'text-slate-900 dark:text-slate-100' : 'text-slate-600 dark:text-slate-400'}`}>
+            <Text style={{
+              fontSize: 12,
+              fontWeight: '900',
+              color: activeTab === 'dashboard' ? '#0284C7' : '#FFFFFF',
+              letterSpacing: 0.2,
+            }}>
               Live Dashboard
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* 2. SCROLL CONTENT */}
       <ScrollView
@@ -249,118 +289,166 @@ export default function OwnerDashboard() {
         {/* ========================================================================= */}
         {activeTab === 'menu' && (
           <View className="gap-2">
-            {/* Quick Action Shortcut Strip */}
-            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8 }}>
+            {/* Quick Action Shortcut Strip (Premium LinearGradient Quick Launch Buttons) */}
+            <View style={{ flexDirection: 'row', gap: 7, marginBottom: 10 }}>
+              {/* 1. + Delivery */}
               <TouchableOpacity
                 onPress={() => router.push(ROUTES.ORDER.CREATE)}
                 style={{
                   flex: 1,
-                  backgroundColor: '#E11D48',
-                  height: 38,
-                  borderRadius: 10,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4,
-                  elevation: 3,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  elevation: 4,
                   shadowColor: '#E11D48',
                   shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 3
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
                 }}
-                activeOpacity={0.8}
+                activeOpacity={0.82}
               >
-                <Ionicons name="cart" size={14} color="#FFF" />
-                <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFF' }}>+ Delivery</Text>
+                <LinearGradient
+                  colors={['#F43F5E', '#E11D48', '#BE123C']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    height: 42,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4.5,
+                    paddingHorizontal: 2,
+                  }}
+                >
+                  <Ionicons name="cart" size={15} color="#FFFFFF" />
+                  <Text style={{ fontSize: 11.5, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.2 }}>
+                    + Delivery
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
 
+              {/* 2. + Client */}
               <TouchableOpacity
                 onPress={() => router.push(ROUTES.OWNER.CUSTOMERS)}
                 style={{
                   flex: 1,
-                  backgroundColor: '#0284C7',
-                  height: 38,
-                  borderRadius: 10,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4,
-                  elevation: 3,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  elevation: 4,
                   shadowColor: '#0284C7',
                   shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 3
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
                 }}
-                activeOpacity={0.8}
+                activeOpacity={0.82}
               >
-                <Ionicons name="person-add" size={14} color="#FFF" />
-                <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFF' }}>+ Client</Text>
+                <LinearGradient
+                  colors={['#38BDF8', '#0284C7', '#0369A1']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    height: 42,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4.5,
+                    paddingHorizontal: 2,
+                  }}
+                >
+                  <Ionicons name="person-add" size={15} color="#FFFFFF" />
+                  <Text style={{ fontSize: 11.5, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.2 }}>
+                    + Client
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
 
+              {/* 3. Load Truck */}
               <TouchableOpacity
                 onPress={() => router.push(ROUTES.OWNER.LOAD_UNLOAD)}
                 style={{
                   flex: 1,
-                  backgroundColor: '#D97706',
-                  height: 38,
-                  borderRadius: 10,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4,
-                  elevation: 3,
-                  shadowColor: '#D97706',
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  elevation: 4,
+                  shadowColor: '#EA580C',
                   shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 3
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
                 }}
-                activeOpacity={0.8}
+                activeOpacity={0.82}
               >
-                <Ionicons name="bus" size={14} color="#FFF" />
-                <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFF' }}>Load Truck</Text>
+                <LinearGradient
+                  colors={['#FB923C', '#EA580C', '#C2410C']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    height: 42,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4.5,
+                    paddingHorizontal: 2,
+                  }}
+                >
+                  <Ionicons name="bus" size={15} color="#FFFFFF" />
+                  <Text style={{ fontSize: 11.5, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.2 }}>
+                    Load Truck
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
 
+              {/* 4. + Expense */}
               <TouchableOpacity
                 onPress={() => router.push(ROUTES.OWNER.EXPENSES)}
                 style={{
                   flex: 1,
-                  backgroundColor: '#059669',
-                  height: 38,
-                  borderRadius: 10,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4,
-                  elevation: 3,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  elevation: 4,
                   shadowColor: '#059669',
                   shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 3
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
                 }}
-                activeOpacity={0.8}
+                activeOpacity={0.82}
               >
-                <Ionicons name="cash" size={14} color="#FFF" />
-                <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFF' }}>+ Expense</Text>
+                <LinearGradient
+                  colors={['#34D399', '#10B981', '#059669']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    height: 42,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4.5,
+                    paddingHorizontal: 2,
+                  }}
+                >
+                  <Ionicons name="cash" size={15} color="#FFFFFF" />
+                  <Text style={{ fontSize: 11.5, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.2 }}>
+                    + Expense
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
 
             {/* 3-Column Grid of 18 Modules */}
-            <View className="flex-row flex-wrap justify-between gap-y-2">
+            <View className="flex-row flex-wrap justify-between gap-y-2.5">
               {menuModules.map((mod) => (
                 <TouchableOpacity
                   key={mod.id}
                   onPress={mod.onPress}
-                  className="w-[31.8%] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800/80 rounded-xl py-2 px-1 items-center justify-center shadow-2xs active:opacity-75 min-h-[86px]"
+                  className="w-[31.8%] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800/80 rounded-2xl py-2.5 px-1 items-center justify-center shadow-2xs active:opacity-75 min-h-[90px]"
                   activeOpacity={0.7}
                 >
                   <View
-                    className="w-8 h-8 rounded-xl justify-center items-center mb-1"
+                    className="w-9 h-9 rounded-xl justify-center items-center mb-1.5"
                     style={{ backgroundColor: mod.bg }}
                   >
-                    <Ionicons name={mod.icon as any} size={17} color={mod.color} />
+                    <Ionicons name={mod.icon as any} size={18} color={mod.color} />
                   </View>
                   <Text
-                    className="text-[10.5px] font-bold text-slate-800 dark:text-slate-100 text-center leading-tight px-0.5"
+                    className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100 text-center leading-tight px-0.5"
                     numberOfLines={2}
                   >
                     {mod.title}
