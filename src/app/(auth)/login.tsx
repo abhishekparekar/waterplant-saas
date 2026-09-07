@@ -233,12 +233,6 @@ export default function LoginScreen() {
               resizeMode="contain"
               className="mb-1"
             />
-            <Text className="text-2xl font-black text-slate-900 dark:text-slate-50 text-center tracking-tight">
-              NextWater Cloud
-            </Text>
-            <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 text-center mt-0.5">
-              Select your account role to sign in
-            </Text>
           </View>
 
           {/* 3 Role Selection Cards */}
@@ -278,10 +272,10 @@ export default function LoginScreen() {
                   </Text>
                 </View>
               </View>
-              <Ionicons 
-                name={selectedRole === 'owner' ? "checkmark-circle" : "ellipse-outline"} 
-                size={22} 
-                color={selectedRole === 'owner' ? "#0284C7" : "#94A3B8"} 
+              <Ionicons
+                name={selectedRole === 'owner' ? "checkmark-circle" : "ellipse-outline"}
+                size={22}
+                color={selectedRole === 'owner' ? "#0284C7" : "#94A3B8"}
               />
             </TouchableOpacity>
 
@@ -320,10 +314,10 @@ export default function LoginScreen() {
                   </Text>
                 </View>
               </View>
-              <Ionicons 
-                name={selectedRole === 'helper' ? "checkmark-circle" : "ellipse-outline"} 
-                size={22} 
-                color={selectedRole === 'helper' ? "#0D9488" : "#94A3B8"} 
+              <Ionicons
+                name={selectedRole === 'helper' ? "checkmark-circle" : "ellipse-outline"}
+                size={22}
+                color={selectedRole === 'helper' ? "#0D9488" : "#94A3B8"}
               />
             </TouchableOpacity>
 
@@ -362,10 +356,10 @@ export default function LoginScreen() {
                   </Text>
                 </View>
               </View>
-              <Ionicons 
-                name={selectedRole === 'customer' ? "checkmark-circle" : "ellipse-outline"} 
-                size={22} 
-                color={selectedRole === 'customer' ? "#4F46E5" : "#94A3B8"} 
+              <Ionicons
+                name={selectedRole === 'customer' ? "checkmark-circle" : "ellipse-outline"}
+                size={22}
+                color={selectedRole === 'customer' ? "#4F46E5" : "#94A3B8"}
               />
             </TouchableOpacity>
           </View>

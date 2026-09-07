@@ -1,27 +1,27 @@
 {
   "expo": {
-    "name": "NextWater",
+    "name": "Next WaterPlant",
     "slug": "NextWater",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo1_transparent.png",
+    "icon": "./assets/images/circle_icon.png",
     "scheme": "nextwater",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/logo1_transparent.png",
+      "icon": "./assets/images/circle_icon.png",
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/images/logo1_transparent.png"
+        "foregroundImage": "./assets/images/circle_adaptive_fg.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.abhiparekar.nextwater"
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/logo1_transparent.png"
+      "favicon": "./assets/images/circle_icon.png"
     },
     "plugins": [
       "expo-router",
