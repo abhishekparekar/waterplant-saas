@@ -30,6 +30,7 @@ export const ROUTES = {
   HELPER: {
     DASHBOARD: '/(helper)/dashboard' as const,
     DELIVERIES: '/(helper)/deliveries' as const,
+    ADD_CUSTOMER: '/(helper)/add-customer' as const,
     PROFILE: '/(helper)/profile' as const,
   },
 
