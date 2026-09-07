@@ -1,94 +1,56 @@
-# Water Plant Management SaaS 🚰
+# Welcome to your Expo app 👋
 
-> **Every Bottle. Every Delivery. Every Rupee. Under Control.**
+This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-A comprehensive, production-ready B2B SaaS and Mobile Application designed for packaged drinking-water plants, 20L jar suppliers, and local water delivery operations.
+## Get started
 
----
+1. Install dependencies
 
-## 🌟 Core Modules & PRD Features
+   ```bash
+   npm install
+   ```
 
-- **👑 Multi-Tenant Architecture & Roles**: Strict `tenantId` isolation across all collections with role-based permission control (Owner, Manager, Delivery Boy, Office Staff).
-- **📊 Real-Time Operations Console**: Today's Sales, Collections, Customer Outstanding, Delivery Progress, 20L Production, and Ready Stock.
-- **🚚 Mobile Field Delivery Execution**: Mobile driver route workflow: Start delivery, record delivered quantity, collect empty jars, accept UPI / Cash with QR scanner, log delivery failures.
-- **🔄 360° Bottle Intelligence Ledger**: Track asset jars across 6 states: Plant Filled, Plant Empty, In-Transit Truck, Customer-Held, Returned, Damaged/Scrap.
-- **🏭 Production & RO Quality Monitor**: Shift bottling runs (Morning/Afternoon/Night), net produced count, rejection tracking, and raw vs purified water TDS monitoring (BIS 14543 compliant).
-- **📦 Transactional Stock Inventory**: Multi-category ledger (Finished goods, Empty jars, Tamper-proof caps, Branded labels) with immutable transaction logs.
-- **👥 Customer CRM & Account Statements**: Customer types (Home, Office, Hotel, School, Hospital, Restaurant, etc.), credit limits, bottle deposits, and printable ledger statements.
-- **🔁 Recurring Order Auto-Scheduler**: Daily, Alternate Days, Weekdays, and Weekly automated delivery generation.
-- **🧾 GST Tax Invoices & Billing**: Instant printable tax invoices with 18% GST breakdown, receipt generation, and WhatsApp invoice sharing.
-- **💰 Payments & Receivables Aging**: UPI, Cash, and Bank Transfer recording with automatic customer balance reconciliation.
-- **💸 Business Expense Tracking**: Categorized logging for diesel fuel, electricity, vehicle repairs, filter replacements, and salaries.
-- **🔒 Daily Closing & Day-Lock**: End-of-day cash drawer reconciliation and day-lock mechanism with audit trails.
-- **📈 Business Analytics Reports**: Visual BI reports for Sales, Fleet efficiency, Bottle turnover, and Outstanding aging.
-- **⚡ Offline Sync Queue**: Resilient offline mobile operation queue when delivery drivers are in low-connectivity areas.
-- **💎 SaaS Subscription & 14-Day Free Trial Engine**: Starter, Growth, Business, and Enterprise tiers with live trial countdown.
+2. Start the app
 
----
+   ```bash
+   npx expo start
+   ```
 
-## 🛠️ Technology Stack
+In the output, you'll find options to open the app in a
 
-- **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS
-- **Icons**: Lucide React
-- **Backend / Database**: Firebase Authentication + Cloud Firestore + Firebase Storage + FCM (with offline-ready fallback layer)
-- **Deployment**: Web & Responsive Mobile PWA + React Native Architecture
+- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
+- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
+- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
----
+You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## 🚀 Getting Started
+## Get a fresh project
 
-### 1. Installation
+When you're ready, run:
 
 ```bash
-# Clone the repository
-git clone https://github.com/abhishekparekar/waterplant-saas.git
-
-# Navigate into the project folder
-cd waterplant-saas
-
-# Install dependencies
-npm install
+npm run reset-project
 ```
 
-### 2. Run Development Server
+This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
-```bash
-npm run dev
-```
+### Other setup steps
 
-Open your browser at [http://localhost:5173](http://localhost:5173) to test all features.
+- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
+- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
+- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
 
-### 3. Build for Production
+## Learn more
 
-```bash
-npm run build
-```
+To learn more about developing your project with Expo, look at the following resources:
 
----
+- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
+- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
-## 📁 Firebase & Firestore Structure
+## Join the community
 
-```text
-tenants/{tenantId}/
-├── customers/{customerId}
-├── products/{productId}
-├── orders/{orderId}
-├── recurringOrders/{recurringOrderId}
-├── deliveries/{deliveryId}
-├── bottleLedger/{ledgerId}
-├── stockLedger/{ledgerId}
-├── production/{productionId}
-├── payments/{paymentId}
-├── invoices/{invoiceId}
-├── expenses/{expenseId}
-├── employees/{employeeId}
-├── dailyClosings/{closingId}
-├── notifications/{notificationId}
-└── auditLogs/{auditId}
-```
+Join our community of developers creating universal apps.
 
----
-
-## 📜 License
-
-MIT License. Designed and developed for modern water plant operations.
+- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
+- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.

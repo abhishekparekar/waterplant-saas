@@ -1,46 +1,44 @@
 {
   "expo": {
-    "name": "WaterPlant SaaS",
-    "slug": "water-plant-saas",
+    "name": "NextWater",
+    "slug": "NextWater",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./public/favicon.ico",
-    "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./public/favicon.ico",
-      "resizeMode": "contain",
-      "backgroundColor": "#020617"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "icon": "./assets/images/logo1_transparent.png",
+    "scheme": "nextwater",
+    "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.waterplant.saas"
+      "icon": "./assets/images/logo1_transparent.png",
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./public/favicon.ico",
-        "backgroundColor": "#020617"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/logo1_transparent.png"
       },
-      "package": "com.waterplant.saas",
-      "permissions": [
-        "CAMERA",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "INTERNET",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ]
+      "predictiveBackGestureEnabled": false,
+      "package": "com.abhiparekar.nextwater"
     },
     "web": {
-      "favicon": "./public/favicon.ico",
-      "bundler": "metro"
+      "output": "static",
+      "favicon": "./assets/images/logo1_transparent.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "water-plant-saas-expo-prod"
-      }
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/logo1_transparent.png",
+          "imageWidth": 240
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-image"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
     }
   }
 }
